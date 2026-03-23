@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { getCategoryBreakdown, getTransactionsByMonth } from "@/lib/utils/selectors";
 import { useAppStore } from "@/providers/app-store";
 
+const BAR_COLORS = ["#000b60", "#00714e", "#ea580c", "#7f1d1d", "#4955b3", "#6d28d9"];
+
 export default function DashboardPage() {
   const { state, actions } = useAppStore();
   const router = useRouter();
@@ -23,80 +25,70 @@ export default function DashboardPage() {
   );
 
   return (
-    <AppShell
-      title="Dashboard"
-      eyebrow="Category View"
-      actions={
-        <Link className="cta-primary" href="/chat-add">
-          Add Expense
-        </Link>
-      }
-    >
-      <section className="grid gap-4 md:grid-cols-3">
-        <SectionCard>
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-soft)]">Current month</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--ink-strong)]">{formatCurrency(total)}</p>
-        </SectionCard>
-        <SectionCard>
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-soft)]">Saved transactions</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--ink-strong)]">{monthTransactions.length}</p>
-        </SectionCard>
-        <SectionCard>
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-soft)]">Scope</p>
-          <p className="mt-3 text-xl font-semibold text-[var(--ink-strong)]">Current month only</p>
-        </SectionCard>
+    <AppShell title="Dashboard" eyebrow="Analytics Overview">
+      <section className="panel-hero relative overflow-hidden rounded-[2rem] p-7 text-white">
+        <p className="text-sm text-white/70">Total Spend: Current Month</p>
+        <p className="mt-2 text-6xl font-extrabold tracking-[-0.04em]">{formatCurrency(total)}</p>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.15em] text-white/70">Budget Left</p>
+            <p className="mt-1 text-4xl font-bold tracking-[-0.03em]">{formatCurrency(Math.max(0, 4000000 - total))}</p>
+          </div>
+          <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.15em] text-white/70">Transactions</p>
+            <p className="mt-1 text-4xl font-bold tracking-[-0.03em]">{monthTransactions.length}</p>
+          </div>
+        </div>
       </section>
 
-      <SectionCard>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-heading text-3xl text-[var(--ink-strong)]">Category breakdown</h2>
-            <p className="mt-1 text-sm text-[var(--ink-soft)]">
-              Horizontal bars keep the MVP readable without a heavy chart dependency.
-            </p>
-          </div>
+      <SectionCard className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-4xl tracking-[-0.03em] text-[var(--ink)]">Category Breakdown</h3>
+          <Link className="text-lg font-semibold text-[var(--primary)]" href="/expenses">
+            View History
+          </Link>
         </div>
 
         {breakdown.length === 0 ? (
-          <div className="mt-5">
-            <EmptyState
-              title="No expense data yet"
-              description="Save a few transactions first, then this screen will group the current month by category."
-              action={
-                <Link className="cta-primary" href="/chat-add">
-                  Go to Add Expense
-                </Link>
-              }
-            />
-          </div>
+          <EmptyState
+            title="No more data found"
+            description="You have no saved expenses for this month yet. Parse a receipt and confirm the draft cards."
+            action={
+              <Link className="cta-primary" href="/chat-add">
+                Add your first expense
+              </Link>
+            }
+          />
         ) : (
-          <div className="mt-6 space-y-4">
-            {breakdown.map((item) => (
+          <div className="space-y-4">
+            {breakdown.map((item, index) => (
               <button
                 key={item.categoryId}
                 type="button"
-                className="w-full rounded-[24px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 text-left shadow-[0_12px_32px_rgba(56,39,25,0.07)]"
+                className="w-full rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4 text-left transition hover:bg-white"
                 onClick={() => {
                   actions.setCategoryFilter(item.categoryId);
                   router.push("/expenses");
                 }}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold text-[var(--ink-strong)]">{item.name}</p>
-                    <p className="text-sm text-[var(--ink-soft)]">{item.count} transaction{item.count === 1 ? "" : "s"}</p>
+                    <p className="text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">{item.name}</p>
+                    <p className="mt-1 text-sm uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+                      {item.count} items
+                    </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-[var(--ink-strong)]">{item.formattedTotal}</p>
-                    <p className="text-sm text-[var(--ink-soft)]">{item.percentage}%</p>
+                    <p className="text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">{item.formattedTotal}</p>
+                    <p className="mt-1 text-sm uppercase tracking-[0.14em] text-[var(--ink-muted)]">{item.percentage}% of total</p>
                   </div>
                 </div>
-                <div className="mt-4 h-3 rounded-full bg-[rgba(125,95,74,0.08)]">
+                <div className="mt-4 h-3 rounded-full bg-[var(--surface-low)]">
                   <div
                     className="h-3 rounded-full"
                     style={{
-                      width: `${Math.max(item.percentage, 8)}%`,
-                      background: item.color ?? "var(--accent)"
+                      width: `${Math.max(item.percentage, 4)}%`,
+                      backgroundColor: BAR_COLORS[index % BAR_COLORS.length]
                     }}
                   />
                 </div>
@@ -108,4 +100,3 @@ export default function DashboardPage() {
     </AppShell>
   );
 }
-

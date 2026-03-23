@@ -4,13 +4,48 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell, EmptyState, SectionCard } from "@/components/app-shell";
 import { formatCurrency } from "@/lib/utils/currency";
-import { formatDisplayDate } from "@/lib/utils/date";
+import { formatDisplayDate, getCurrentMonthKey } from "@/lib/utils/date";
 import {
   getCurrentMonthTotal,
   resolveCategoryLabel,
   sortTransactions
 } from "@/lib/utils/selectors";
 import { useAppStore } from "@/providers/app-store";
+
+const ICON_BY_CATEGORY: Record<string, string> = {
+  food: "F",
+  transport: "T",
+  shopping: "S",
+  bills: "B",
+  entertainment: "E",
+  uncategorized: "?"
+};
+
+const COLOR_BY_CATEGORY: Record<string, string> = {
+  food: "#f2dfc3",
+  transport: "#d7e6fb",
+  shopping: "#e4d8f6",
+  bills: "#d8f2e6",
+  entertainment: "#f8dbe1",
+  uncategorized: "#e8ebf0"
+};
+
+function getDayLabel(dateTrx: string) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const target = new Date(`${dateTrx}T00:00:00`).getTime();
+  const dayDiff = Math.round((today - target) / (1000 * 60 * 60 * 24));
+
+  if (dayDiff === 0) {
+    return "Today";
+  }
+
+  if (dayDiff === 1) {
+    return "Yesterday";
+  }
+
+  return formatDisplayDate(dateTrx);
+}
 
 export default function ExpensesPage() {
   const { state, actions } = useAppStore();
@@ -38,71 +73,105 @@ export default function ExpensesPage() {
     [state.filters.month, state.transactions]
   );
 
+  const monthLabel = useMemo(() => {
+    const month = state.filters.month ?? getCurrentMonthKey();
+    const [year, monthNumber] = month.split("-");
+    const d = new Date(Number(year), Number(monthNumber) - 1, 1);
+
+    return d.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric"
+    });
+  }, [state.filters.month]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, typeof visibleTransactions>();
+
+    for (const transaction of visibleTransactions) {
+      const key = getDayLabel(transaction.dateTrx);
+      const existing = map.get(key) ?? [];
+      existing.push(transaction);
+      map.set(key, existing);
+    }
+
+    return [...map.entries()];
+  }, [visibleTransactions]);
+
   return (
-    <AppShell
-      title="Expense Tracker"
-      eyebrow="Main Screen"
-      actions={
-        <>
-          <Link className="cta-secondary" href="/dashboard">
-            Dashboard
-          </Link>
-          <Link className="cta-primary" href="/chat-add">
-            Add Expense
-          </Link>
-        </>
-      }
-    >
-      <section className="grid gap-4 md:grid-cols-3">
+    <AppShell title="Expenses" eyebrow="Main Tracker">
+      <section className="grid grid-cols-2 gap-4">
         <SectionCard className="animate-rise">
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-soft)]">This month</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--ink-strong)]">{formatCurrency(monthTotal)}</p>
+          <p className="text-sm text-[var(--ink-muted)]">This Month</p>
+          <p className="mt-2 text-5xl font-semibold tracking-[-0.03em] text-[var(--primary)]">
+            {formatCurrency(monthTotal)}
+          </p>
         </SectionCard>
-        <SectionCard className="animate-rise [animation-delay:80ms]">
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-soft)]">Transactions</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--ink-strong)]">{state.transactions.length}</p>
-        </SectionCard>
-        <SectionCard className="animate-rise [animation-delay:160ms]">
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-soft)]">Active filter</p>
-          <p className="mt-3 text-xl font-semibold text-[var(--ink-strong)]">
-            {state.categories.find((category) => category.id === state.filters.categoryId)?.name ?? "All categories"}
+        <SectionCard className="animate-rise [animation-delay:90ms]">
+          <p className="text-sm text-[var(--ink-muted)]">Total Transactions</p>
+          <p className="mt-2 text-5xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+            {state.transactions.length}
           </p>
         </SectionCard>
       </section>
 
-      <SectionCard className="space-y-4 animate-rise [animation-delay:220ms]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <SectionCard className="space-y-4 animate-rise [animation-delay:140ms]">
+        <div className="relative">
           <input
-            className="field"
+            className="field pl-12"
             type="search"
-            placeholder="Search title or merchant"
+            placeholder="Search by title..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <select
-            className="select md:max-w-56"
-            value={state.filters.categoryId ?? "all"}
-            onChange={(event) =>
-              actions.setCategoryFilter(event.target.value === "all" ? null : event.target.value)
-            }
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">o</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            className={`shrink-0 rounded-full px-6 py-2 text-base font-semibold ${
+              !state.filters.categoryId
+                ? "bg-[var(--primary)] text-white"
+                : "bg-[var(--surface-high)] text-[var(--ink-muted)]"
+            }`}
+            onClick={() => actions.setCategoryFilter(null)}
           >
-            <option value="all">All categories</option>
-            {state.categories.map((category) => (
-              <option key={category.id} value={category.id}>
+            All
+          </button>
+          {state.categories
+            .filter((category) => category.id !== "uncategorized")
+            .map((category) => (
+              <button
+                type="button"
+                key={category.id}
+                className={`shrink-0 rounded-full px-6 py-2 text-base font-semibold ${
+                  state.filters.categoryId === category.id
+                    ? "bg-[var(--primary)] text-white"
+                    : "bg-[var(--surface-high)] text-[var(--ink-muted)]"
+                }`}
+                onClick={() => actions.setCategoryFilter(category.id)}
+              >
                 {category.name}
-              </option>
+              </button>
             ))}
-          </select>
+        </div>
+      </SectionCard>
+
+      <section className="space-y-5 animate-rise [animation-delay:210ms]">
+        <div className="flex items-center justify-between px-1">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+            Recent Activity
+          </p>
+          <p className="text-[34px] leading-none text-[var(--ink-muted)]">{monthLabel}</p>
         </div>
 
         {state.loading ? (
-          <div className="rounded-[24px] bg-white/60 px-4 py-10 text-center text-sm text-[var(--ink-soft)]">
-            Loading your timeline...
-          </div>
+          <SectionCard>
+            <p className="text-sm text-[var(--ink-muted)]">Loading timeline...</p>
+          </SectionCard>
         ) : visibleTransactions.length === 0 ? (
           <EmptyState
             title="No transactions yet"
-            description="Add your first expense to build the timeline and dashboard."
+            description="Use Add Expense to parse receipts and confirm entries before saving."
             action={
               <Link className="cta-primary" href="/chat-add">
                 Add your first expense
@@ -110,39 +179,60 @@ export default function ExpensesPage() {
             }
           />
         ) : (
-          <div className="space-y-3">
-            {visibleTransactions.map((transaction, index) => {
-              const categoryLabel = resolveCategoryLabel(transaction, state.categories);
+          grouped.map(([dayLabel, items]) => (
+            <div key={dayLabel} className="space-y-3">
+              <div className="inline-flex rounded-xl bg-[var(--surface-low)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+                {dayLabel}
+              </div>
+              {items.map((transaction) => {
+                const categoryLabel = resolveCategoryLabel(transaction, state.categories);
+                const categoryId = transaction.categoryId ?? "uncategorized";
 
-              return (
-                <article
-                  key={transaction.id}
-                  className="grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 shadow-[0_12px_32px_rgba(56,39,25,0.07)] animate-rise md:grid-cols-[1fr_auto] md:items-center"
-                  style={{ animationDelay: `${Math.min(index * 60, 240)}ms` }}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--ink-soft)]">
-                      <span className="tag-chip">{categoryLabel}</span>
-                      {transaction.attachmentUri ? <span>Attachment</span> : null}
+                return (
+                  <article
+                    key={transaction.id}
+                    className="flex items-center justify-between gap-4 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold text-[var(--primary)]"
+                        style={{ backgroundColor: COLOR_BY_CATEGORY[categoryId] ?? "#e8ebf0" }}
+                      >
+                        {ICON_BY_CATEGORY[categoryId] ?? "?"}
+                      </div>
+                      <div>
+                        <h3 className="text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">
+                          {transaction.title}
+                        </h3>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="tag-chip">{categoryLabel}</span>
+                          {transaction.attachmentUri ? (
+                            <span className="text-xs uppercase tracking-[0.15em] text-[var(--ink-muted)]">File</span>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-[var(--ink-strong)]">{transaction.title}</h2>
-                      <p className="text-sm text-[var(--ink-soft)]">
-                        {transaction.merchant || "No merchant"} · {formatDisplayDate(transaction.dateTrx)}
+                    <div className="text-right">
+                      <p className="text-[40px] leading-none tracking-[-0.03em] text-[var(--ink)]">
+                        {formatCurrency(transaction.amount)}
                       </p>
+                      <p className="mt-2 text-sm text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
                     </div>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-2xl font-semibold text-[var(--ink-strong)]">{formatCurrency(transaction.amount)}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-soft)]">{transaction.source}</p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+          ))
         )}
-      </SectionCard>
+      </section>
+
+      <Link
+        href="/chat-add"
+        className="fixed bottom-28 right-6 z-20 flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary)] text-4xl text-white shadow-[var(--shadow-float)]"
+        aria-label="Add expense"
+      >
+        +
+      </Link>
     </AppShell>
   );
 }
-

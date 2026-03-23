@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Finance — Add Expense</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-container-low": "#f2f4f6",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-secondary-container": "#00714e",
+                        "on-background": "#191c1e",
+                        "tertiary-container": "#670019",
+                        "inverse-surface": "#2d3133",
+                        "outline": "#767683",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#006c4a",
+                        "tertiary-fixed-dim": "#ffb3b6",
+                        "secondary-fixed-dim": "#68dba9",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed-variant": "#303c9a",
+                        "outline-variant": "#c6c5d4",
+                        "surface-container": "#eceef0",
+                        "surface-variant": "#e0e3e5",
+                        "tertiary-fixed": "#ffdada",
+                        "on-primary-fixed": "#000c62",
+                        "on-tertiary-fixed": "#40000c",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-tint": "#4955b3",
+                        "on-surface-variant": "#454652",
+                        "tertiary": "#40000c",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#dfe0ff",
+                        "on-secondary-fixed": "#002114",
+                        "on-tertiary-fixed-variant": "#920028",
+                        "on-primary-container": "#8390f2",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#ff6273",
+                        "error": "#ba1a1a",
+                        "primary": "#000b60",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "inverse-primary": "#bcc2ff",
+                        "primary-container": "#142283",
+                        "surface": "#f7f9fb",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#85f8c4",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#82f5c1",
+                        "primary-fixed-dim": "#bcc2ff",
+                        "on-tertiary": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            backdrop-filter: blur(24px);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #000b60 0%, #142283 100%);
+        }
+        body {
+            background-color: #f7f9fb;
+            color: #191c1e;
+            font-family: 'Inter', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .tab-active {
+            color: #000b60;
+            border-bottom: 2px solid #000b60;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- Top Navigation Shell -->
+<header class="sticky top-0 z-50 bg-slate-50/80 backdrop-blur-xl shadow-sm shadow-indigo-900/5 flex justify-between items-center w-full px-5 py-4">
+<div class="flex items-center gap-4">
+<button class="transition-all duration-300 ease-in-out active:scale-95 text-indigo-900 flex items-center justify-center p-2 hover:bg-slate-200/50 rounded-full">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<h1 class="font-['Manrope'] font-bold text-xl text-indigo-950 tracking-tight">Add Expense</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-slate-400 uppercase tracking-widest px-2 py-1 bg-slate-100 rounded-lg">Drafting</span>
+</div>
+</header>
+<main class="flex-1 max-w-2xl mx-auto w-full px-5 pt-4 pb-48">
+<!-- Tabs Interface -->
+<div class="flex border-b border-slate-200 mb-6">
+<button class="flex-1 py-3 text-sm font-bold font-['Manrope'] transition-colors border-b-2 border-transparent text-slate-400" id="tab-ocr" onclick="switchTab('ocr')">
+                OCR
+            </button>
+<button class="flex-1 py-3 text-sm font-bold font-['Manrope'] transition-colors border-b-2 border-primary text-primary" id="tab-manual" onclick="switchTab('manual')">
+                Manual
+            </button>
+</div>
+<!-- OCR Section -->
+<div class="hidden space-y-6" id="ocr-content">
+<!-- Contextual Help -->
+<div class="p-6 bg-indigo-50/50 rounded-2xl border-l-4 border-indigo-600">
+<p class="text-on-surface-variant font-medium text-sm leading-relaxed">
+                    Simply type your expense details below, like <span class="text-primary font-bold">"Blueberry Muffin 4.50 at Bakery"</span>. Our AI will automatically parse the merchant, category, and amount for you.
+                </p>
+</div>
+<!-- Transaction Card 1 (Parsed Example) -->
+<div class="group bg-surface-container-lowest rounded-xl shadow-[0_-4px_24px_rgba(0,11,96,0.04)] overflow-hidden transition-all duration-300 hover:shadow-md">
+<div class="p-5">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="local_cafe">local_cafe</span>
+</div>
+<div>
+<h3 class="font-['Manrope'] font-bold text-indigo-950">Starbucks Coffee</h3>
+<p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Detected from: "Coffee 32k at Starbucks"</p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase text-slate-500">Amount</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+<input class="w-full bg-surface-container-highest border-none rounded-lg pl-7 py-2 text-sm font-semibold focus:ring-2 focus:ring-primary/20 transition-all" type="number" value="32.00"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase text-slate-500">Category</label>
+<select class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all">
+<option>Dining &amp; Drinks</option>
+<option>Groceries</option>
+<option>Transportation</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase text-slate-500">Date</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all" type="date" value="2023-10-24"/>
+</div>
+<div class="space-y-1.5">
+<label class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase text-slate-500">Merchant</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all" type="text" value="Starbucks"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Parsing State Loader -->
+<div class="flex items-center justify-center py-6 gap-3">
+<div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+<span class="text-sm font-['Inter'] font-medium text-indigo-900/60 tracking-tight">AI is parsing your last input...</span>
+</div>
+</div>
+<!-- Manual Entry Section -->
+<div class="space-y-6" id="manual-content">
+<!-- Upload Photo Section -->
+<div class="bg-white rounded-xl border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center gap-3 transition-colors hover:border-indigo-300 hover:bg-indigo-50/20 group cursor-pointer">
+<div class="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-2 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="add_a_photo">add_a_photo</span>
+</div>
+<div class="text-center">
+<p class="font-['Manrope'] font-bold text-indigo-950 text-base">Upload Receipt Photo</p>
+<p class="text-xs text-slate-500 font-medium mt-1">AI will automatically detect details for you</p>
+</div>
+<button class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold font-['Manrope'] shadow-md shadow-indigo-900/10 active:scale-95 transition-all">
+                    Scan Receipt
+                </button>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_-4px_24px_rgba(0,11,96,0.04)] p-6 space-y-5">
+<h2 class="font-['Manrope'] font-bold text-indigo-950 text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-indigo-600 text-lg">edit_note</span>
+                    Expense Details
+                </h2>
+<div class="space-y-2">
+<label class="font-['Inter'] font-medium text-xs tracking-wide uppercase text-slate-500">Title / Description</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all" placeholder="e.g. Weekly Grocery Run" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-['Inter'] font-medium text-xs tracking-wide uppercase text-slate-500">Merchant</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all" placeholder="e.g. Whole Foods" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-['Inter'] font-medium text-xs tracking-wide uppercase text-slate-500">Amount</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl pl-9 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-['Inter'] font-medium text-xs tracking-wide uppercase text-slate-500">Date</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all" type="date"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-['Inter'] font-medium text-xs tracking-wide uppercase text-slate-500">Category</label>
+<select class="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all appearance-none">
+<option disabled="" selected="">Select Category</option>
+<option>Dining &amp; Drinks</option>
+<option>Groceries</option>
+<option>Transportation</option>
+<option>Electronics</option>
+<option>Entertainment</option>
+<option>Bills &amp; Utilities</option>
+</select>
+</div>
+<div class="pt-4 flex gap-3">
+<button class="flex-1 bg-primary/5 text-primary py-3 rounded-xl font-['Manrope'] font-bold text-sm active:scale-95 transition-all">
+                        Add Another
+                    </button>
+<button class="flex-1 primary-gradient text-white py-3 rounded-xl font-['Manrope'] font-bold text-sm shadow-md shadow-indigo-900/10 active:scale-95 transition-all">
+                        Save Entry
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Chat/Input Interaction Layer -->
+<section class="fixed bottom-0 left-0 w-full z-40" id="chat-interaction-layer">
+<!-- Floating Footer Actions -->
+<div class="max-w-2xl mx-auto px-5 mb-4 flex gap-3">
+<button class="flex-1 primary-gradient text-white py-4 rounded-xl font-['Manrope'] font-bold tracking-tight shadow-lg shadow-indigo-900/20 active:scale-[0.98] transition-all">
+                Submit All Transactions
+            </button>
+<button class="px-6 bg-white text-slate-600 border border-slate-200 py-4 rounded-xl font-['Manrope'] font-semibold active:scale-[0.98] transition-all">
+                Discard
+            </button>
+</div>
+<!-- Chat Input Field (Glassmorphism) -->
+<div class="bg-white/70 backdrop-blur-2xl border-t border-slate-200/50 px-5 pt-4 pb-8" id="ai-input-container">
+<div class="max-w-2xl mx-auto flex items-end gap-3 bg-surface-container-low p-2 rounded-2xl shadow-inner shadow-black/5">
+<button class="p-3 text-slate-500 hover:text-indigo-600 transition-colors">
+<span class="material-symbols-outlined" data-icon="add_a_photo">add_a_photo</span>
+</button>
+<div class="flex-1 min-h-[44px] flex items-center">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-sm font-medium text-indigo-950 placeholder:text-slate-400 resize-none py-3" placeholder="Type what you spent..." rows="1"></textarea>
+</div>
+<button class="primary-gradient w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-900/20 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="arrow_upward">arrow_upward</span>
+</button>
+</div>
+<!-- Quick Suggestions -->
+<div class="max-w-2xl mx-auto mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
+                    "Lunch at Pret $12"
+                </button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
+                    "Gas 50"
+                </button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
+                    "Netflix Subscription"
+                </button>
+</div>
+</div>
+</section>
+<!-- Invisible padding for the fixed footer -->
+<div class="h-48"></div>
+<script>
+        function switchTab(tabId) {
+            const ocrContent = document.getElementById('ocr-content');
+            const manualContent = document.getElementById('manual-content');
+            const aiInputContainer = document.getElementById('ai-input-container');
+            const tabOcr = document.getElementById('tab-ocr');
+            const tabManual = document.getElementById('tab-manual');
+
+            if (tabId === 'ocr') {
+                ocrContent.classList.remove('hidden');
+                manualContent.classList.add('hidden');
+                aiInputContainer.classList.remove('hidden');
+                
+                tabOcr.classList.remove('text-slate-400', 'border-transparent');
+                tabOcr.classList.add('text-primary', 'border-primary');
+                
+                tabManual.classList.add('text-slate-400', 'border-transparent');
+                tabManual.classList.remove('text-primary', 'border-primary');
+            } else {
+                ocrContent.classList.add('hidden');
+                manualContent.classList.remove('hidden');
+                aiInputContainer.classList.add('hidden');
+                
+                tabManual.classList.remove('text-slate-400', 'border-transparent');
+                tabManual.classList.add('text-primary', 'border-primary');
+                
+                tabOcr.classList.add('text-slate-400', 'border-transparent');
+                tabOcr.classList.remove('text-primary', 'border-primary');
+            }
+        }
+    </script>
+</body></html>

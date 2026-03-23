@@ -4,15 +4,27 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell, EmptyState, SectionCard } from "@/components/app-shell";
+import { createId } from "@/lib/utils/id";
+import { getTodayDate } from "@/lib/utils/date";
 import { useAppStore } from "@/providers/app-store";
+import { UNCATEGORIZED_CATEGORY_ID, type DraftTransaction } from "@/types/app";
+
+type InputTab = "quick" | "manual";
 
 export default function ChatAddPage() {
   const { state, actions } = useAppStore();
   const router = useRouter();
+  const [tab, setTab] = useState<InputTab>("quick");
   const [text, setText] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [attachmentUri, setAttachmentUri] = useState<string | null>(null);
   const [localMessage, setLocalMessage] = useState<string | null>(null);
+
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualMerchant, setManualMerchant] = useState("");
+  const [manualAmount, setManualAmount] = useState("");
+  const [manualDate, setManualDate] = useState(getTodayDate());
+  const [manualCategoryId, setManualCategoryId] = useState(UNCATEGORIZED_CATEGORY_ID);
 
   useEffect(() => {
     return () => {
@@ -33,7 +45,7 @@ export default function ChatAddPage() {
 
   async function handleParse() {
     if (!text.trim() && !selectedFile) {
-      setLocalMessage("Add text, an image, or both before parsing.");
+      setLocalMessage("Type an expense or upload a receipt first.");
       return;
     }
 
@@ -43,6 +55,32 @@ export default function ChatAddPage() {
       file: selectedFile,
       attachmentUri
     });
+  }
+
+  function addManualDraft() {
+    const category = state.categories.find((item) => item.id === manualCategoryId);
+    const parsedAmount = Number(manualAmount.replace(/[^\d]/g, ""));
+
+    const draft: DraftTransaction = {
+      id: createId("draft"),
+      merchant: manualMerchant.trim(),
+      title: manualTitle.trim(),
+      amount: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
+      dateTrx: manualDate,
+      categoryId: category?.id ?? UNCATEGORIZED_CATEGORY_ID,
+      categoryLabel: category?.name ?? "Uncategorized",
+      attachmentUri: null,
+      parseConfidence: null,
+      errors: {},
+      isValid: false
+    };
+
+    actions.setDraftTransactions([...state.draftTransactions, draft]);
+    setManualTitle("");
+    setManualMerchant("");
+    setManualAmount("");
+    setManualDate(getTodayDate());
+    setManualCategoryId(UNCATEGORIZED_CATEGORY_ID);
   }
 
   async function handleSubmit() {
@@ -67,211 +105,240 @@ export default function ChatAddPage() {
   const hasInvalidDrafts = state.draftTransactions.some((draft) => !draft.isValid);
 
   return (
-    <AppShell title="Add Expense" eyebrow="Chat Add Transaction">
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <SectionCard className="space-y-5 animate-rise">
-          <div>
-            <h2 className="font-heading text-3xl text-[var(--ink-strong)]">Composer</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-              Drop a quick note, attach one image, and generate confirmation cards before anything is saved.
-            </p>
+    <AppShell title="Add Expense" eyebrow="Drafting">
+      <SectionCard className="space-y-4">
+        <div className="flex border-b border-[var(--line)]">
+          <button
+            type="button"
+            className={`flex-1 pb-3 text-center text-lg font-semibold ${tab === "quick" ? "tab-active" : "text-[var(--ink-muted)]"}`}
+            onClick={() => setTab("quick")}
+          >
+            Quick Add (AI)
+          </button>
+          <button
+            type="button"
+            className={`flex-1 pb-3 text-center text-lg font-semibold ${tab === "manual" ? "tab-active" : "text-[var(--ink-muted)]"}`}
+            onClick={() => setTab("manual")}
+          >
+            Manual Entry
+          </button>
+        </div>
+
+        {tab === "quick" ? (
+          <div className="space-y-4">
+            <div className="rounded-3xl border-l-4 border-[var(--primary)] bg-[rgba(223,228,255,0.6)] p-5 text-sm leading-7 text-[var(--ink)]">
+              Type details like "Coffee 32k at Starbucks" and upload receipt photos when needed. FE calls OCR process endpoint, receives transactions, and renders confirmation cards below.
+            </div>
+
+            <div className="space-y-3 rounded-3xl border-2 border-dashed border-[var(--line)] bg-[var(--surface)] p-5">
+              <label className="block">
+                <span className="mb-2 block text-sm uppercase tracking-[0.16em] text-[var(--ink-muted)]">Quick text input</span>
+                <textarea
+                  className="textarea"
+                  placeholder="Lunch 45k at Pret\nGrab 34.500"
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm uppercase tracking-[0.16em] text-[var(--ink-muted)]">Upload receipt photo</span>
+                <input
+                  className="field"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    replaceAttachment(file);
+                    setLocalMessage(null);
+                  }}
+                />
+              </label>
+
+              {attachmentUri && selectedFile?.type.startsWith("image/") ? (
+                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[var(--line)]">
+                  <Image src={attachmentUri} alt="Receipt preview" fill className="object-cover" unoptimized />
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-3">
+                <button type="button" className="cta-primary" onClick={handleParse} disabled={state.parsing}>
+                  {state.parsing ? "AI is parsing..." : "Parse to Draft Cards"}
+                </button>
+                <button type="button" className="cta-secondary" onClick={discardAll}>
+                  Discard
+                </button>
+              </div>
+            </div>
           </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-5">
+              <h3 className="font-heading text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">Expense Details</h3>
+              <div className="mt-4 grid gap-3">
+                <input
+                  className="field"
+                  placeholder="Title / Description"
+                  value={manualTitle}
+                  onChange={(event) => setManualTitle(event.target.value)}
+                />
+                <input
+                  className="field"
+                  placeholder="Merchant"
+                  value={manualMerchant}
+                  onChange={(event) => setManualMerchant(event.target.value)}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    className="field"
+                    placeholder="Amount"
+                    inputMode="numeric"
+                    value={manualAmount}
+                    onChange={(event) => setManualAmount(event.target.value)}
+                  />
+                  <input
+                    className="field"
+                    type="date"
+                    value={manualDate}
+                    onChange={(event) => setManualDate(event.target.value)}
+                  />
+                </div>
+                <select
+                  className="select"
+                  value={manualCategoryId}
+                  onChange={(event) => setManualCategoryId(event.target.value)}
+                >
+                  {state.categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
 
-          <label className="block text-sm font-semibold text-[var(--ink-strong)]">
-            What happened?
-            <textarea
-              className="textarea mt-2"
-              placeholder="Lunch 45k KFC&#10;Coffee 32rb"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-            />
-          </label>
-
-          <div className="space-y-3">
-            <label className="flex cursor-pointer flex-col rounded-[24px] border border-dashed border-[rgba(194,91,52,0.35)] bg-[rgba(255,255,255,0.66)] px-4 py-5 text-sm text-[var(--ink-soft)]">
-              <span className="font-semibold text-[var(--ink-strong)]">Upload one receipt or photo</span>
-              <span className="mt-1">PNG, JPG, WEBP, or PDF. One image for MVP.</span>
-              <input
-                className="hidden"
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  replaceAttachment(file);
-                  setLocalMessage(null);
-                }}
-              />
-            </label>
-
-            {attachmentUri ? (
-              <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface-strong)] p-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--ink-strong)]">{selectedFile?.name ?? "Attachment ready"}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-soft)]">Preview before parse</p>
-                  </div>
-                  <button type="button" className="cta-secondary" onClick={() => replaceAttachment(null)}>
-                    Remove
+                <div className="flex gap-3 pt-2">
+                  <button type="button" className="cta-secondary flex-1" onClick={discardAll}>
+                    Add Another
+                  </button>
+                  <button type="button" className="cta-primary flex-1" onClick={addManualDraft}>
+                    Save Entry
                   </button>
                 </div>
-                {selectedFile?.type.startsWith("image/") ? (
-                  <div className="relative mt-3 aspect-[4/3] overflow-hidden rounded-[20px]">
-                    <Image src={attachmentUri} alt="Receipt preview" fill className="object-cover" unoptimized />
-                  </div>
-                ) : null}
               </div>
-            ) : null}
-          </div>
-
-          {(localMessage || state.errorMessage) ? (
-            <div className="rounded-[22px] border border-[rgba(180,75,55,0.15)] bg-[rgba(180,75,55,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
-              {localMessage ?? state.errorMessage}
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            <button type="button" className="cta-primary" onClick={handleParse} disabled={state.parsing}>
-              {state.parsing ? "Parsing..." : "Parse draft"}
-            </button>
-            <button type="button" className="cta-secondary" onClick={discardAll}>
-              Discard
-            </button>
-          </div>
-        </SectionCard>
-
-        <SectionCard className="space-y-5 animate-rise [animation-delay:120ms]">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="font-heading text-3xl text-[var(--ink-strong)]">Confirmation cards</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                Fix every draft here. Submit stays disabled until all cards validate.
-              </p>
-            </div>
-            <div className="rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)]">
-              {state.draftTransactions.length} draft{state.draftTransactions.length === 1 ? "" : "s"}
             </div>
           </div>
+        )}
 
-          {state.draftTransactions.length === 0 ? (
-            <EmptyState
-              title="No drafts yet"
-              description="Use text, an image, or both. When parsing finishes, each extracted transaction appears as its own editable card."
-            />
-          ) : (
-            <div className="space-y-4">
-              {state.draftTransactions.map((draft, index) => (
-                <article
-                  key={draft.id}
-                  className="rounded-[24px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 shadow-[0_12px_32px_rgba(56,39,25,0.07)]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-[var(--ink-soft)]">Transaction {index + 1}</p>
-                      <h3 className="mt-1 text-xl font-semibold text-[var(--ink-strong)]">
-                        {draft.title || draft.merchant || "Untitled draft"}
-                      </h3>
-                    </div>
-                    <div className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${draft.isValid ? "bg-[rgba(44,110,73,0.12)] text-[var(--success)]" : "bg-[rgba(180,75,55,0.1)] text-[var(--danger)]"}`}>
-                      {draft.isValid ? "Ready" : "Needs review"}
-                    </div>
+        {(localMessage || state.errorMessage) ? (
+          <div className="rounded-xl border border-[rgba(186,26,26,0.18)] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
+            {localMessage ?? state.errorMessage}
+          </div>
+        ) : null}
+      </SectionCard>
+
+      <SectionCard className="space-y-4">
+        <div className="flex items-end justify-between">
+          <h3 className="font-heading text-[40px] leading-none tracking-[-0.03em] text-[var(--ink)]">Confirmation Cards</h3>
+          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
+            {state.draftTransactions.length} drafts
+          </span>
+        </div>
+
+        {state.draftTransactions.length === 0 ? (
+          <EmptyState
+            title="No drafts yet"
+            description="Parse from OCR or add manual entries. Every draft must be confirmed before submit."
+          />
+        ) : (
+          <div className="space-y-4">
+            {state.draftTransactions.map((draft, index) => (
+              <article key={draft.id} className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-muted)]">Draft {index + 1}</p>
+                    <h4 className="mt-1 text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">
+                      {draft.title || draft.merchant || "Untitled"}
+                    </h4>
                   </div>
+                  <button type="button" className="cta-danger" onClick={() => actions.removeDraft(draft.id)}>
+                    Delete
+                  </button>
+                </div>
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <label className="text-sm font-medium text-[var(--ink-strong)]">
-                      Title
-                      <input
-                        className="field mt-2"
-                        value={draft.title}
-                        onChange={(event) => actions.updateDraft(draft.id, { title: event.target.value })}
-                      />
-                      {draft.errors.title ? <span className="mt-2 block text-xs text-[var(--danger)]">{draft.errors.title}</span> : null}
-                    </label>
-                    <label className="text-sm font-medium text-[var(--ink-strong)]">
-                      Merchant
-                      <input
-                        className="field mt-2"
-                        value={draft.merchant}
-                        onChange={(event) => actions.updateDraft(draft.id, { merchant: event.target.value })}
-                      />
-                    </label>
-                    <label className="text-sm font-medium text-[var(--ink-strong)]">
-                      Amount
-                      <input
-                        className="field mt-2"
-                        inputMode="numeric"
-                        value={draft.amount ?? ""}
-                        onChange={(event) => {
-                          const value = event.target.value.trim();
-                          actions.updateDraft(draft.id, {
-                            amount: value ? Number(value.replace(/[^\d]/g, "")) : null
-                          });
-                        }}
-                      />
-                      {draft.errors.amount ? <span className="mt-2 block text-xs text-[var(--danger)]">{draft.errors.amount}</span> : null}
-                    </label>
-                    <label className="text-sm font-medium text-[var(--ink-strong)]">
-                      Date
-                      <input
-                        className="field mt-2"
-                        type="date"
-                        value={draft.dateTrx}
-                        onChange={(event) => actions.updateDraft(draft.id, { dateTrx: event.target.value })}
-                      />
-                      {draft.errors.dateTrx ? <span className="mt-2 block text-xs text-[var(--danger)]">{draft.errors.dateTrx}</span> : null}
-                    </label>
-                    <label className="text-sm font-medium text-[var(--ink-strong)] md:col-span-2">
-                      Category
-                      <select
-                        className="select mt-2"
-                        value={draft.categoryId ?? ""}
-                        onChange={(event) => actions.updateDraft(draft.id, { categoryId: event.target.value })}
-                      >
-                        {state.categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      {draft.errors.category ? <span className="mt-2 block text-xs text-[var(--danger)]">{draft.errors.category}</span> : null}
-                    </label>
-                  </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    className="field"
+                    value={draft.title}
+                    placeholder="Title"
+                    onChange={(event) => actions.updateDraft(draft.id, { title: event.target.value })}
+                  />
+                  <input
+                    className="field"
+                    value={draft.merchant}
+                    placeholder="Merchant"
+                    onChange={(event) => actions.updateDraft(draft.id, { merchant: event.target.value })}
+                  />
+                  <input
+                    className="field"
+                    inputMode="numeric"
+                    value={draft.amount ?? ""}
+                    placeholder="Amount"
+                    onChange={(event) => {
+                      const value = event.target.value.trim();
+                      actions.updateDraft(draft.id, {
+                        amount: value ? Number(value.replace(/[^\d]/g, "")) : null
+                      });
+                    }}
+                  />
+                  <input
+                    className="field"
+                    type="date"
+                    value={draft.dateTrx}
+                    onChange={(event) => actions.updateDraft(draft.id, { dateTrx: event.target.value })}
+                  />
+                  <select
+                    className="select md:col-span-2"
+                    value={draft.categoryId ?? ""}
+                    onChange={(event) => actions.updateDraft(draft.id, { categoryId: event.target.value })}
+                  >
+                    {state.categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {draft.attachmentUri ? (
-                    <div className="relative mt-4 aspect-[5/2] overflow-hidden rounded-[20px] bg-[rgba(125,95,74,0.08)]">
-                      <Image src={draft.attachmentUri} alt="Draft attachment" fill className="object-cover" unoptimized />
-                    </div>
-                  ) : null}
+                <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+                  <span className={`tag-chip ${draft.isValid ? "!bg-[rgba(0,113,78,0.18)] !text-[var(--success)]" : ""}`}>
+                    {draft.isValid ? "Ready" : "Needs review"}
+                  </span>
+                  <span>Confidence {draft.parseConfidence ? `${Math.round(draft.parseConfidence * 100)}%` : "manual"}</span>
+                </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-soft)]">
-                      Confidence {draft.parseConfidence ? `${Math.round(draft.parseConfidence * 100)}%` : "manual review"}
-                    </p>
-                    <button type="button" className="cta-danger" onClick={() => actions.removeDraft(draft.id)}>
-                      Delete draft
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-3 border-t border-[var(--line)] pt-4">
-            <button
-              type="button"
-              className="cta-primary"
-              onClick={handleSubmit}
-              disabled={state.parsing || state.submitting || state.draftTransactions.length === 0 || hasInvalidDrafts}
-            >
-              {state.submitting ? "Saving..." : "Submit All"}
-            </button>
-            <button type="button" className="cta-secondary" onClick={discardAll}>
-              Discard drafts
-            </button>
-            {hasInvalidDrafts ? (
-              <p className="self-center text-sm text-[var(--danger)]">Invalid cards need fixing before submit.</p>
-            ) : null}
+                {draft.errors.amount ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.amount}</p> : null}
+                {draft.errors.dateTrx ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.dateTrx}</p> : null}
+                {draft.errors.title ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.title}</p> : null}
+                {draft.errors.category ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.category}</p> : null}
+              </article>
+            ))}
           </div>
-        </SectionCard>
+        )}
+      </SectionCard>
+
+      <section className="floating-bar fixed bottom-24 left-0 right-0 z-20 border-y border-[var(--line)] px-5 py-4">
+        <div className="mx-auto flex w-full max-w-xl gap-3">
+          <button
+            type="button"
+            className="cta-primary flex-1"
+            onClick={handleSubmit}
+            disabled={state.parsing || state.submitting || state.draftTransactions.length === 0 || hasInvalidDrafts}
+          >
+            {state.submitting ? "Saving..." : "Submit All Transactions"}
+          </button>
+          <button type="button" className="cta-secondary px-5" onClick={discardAll}>
+            Discard
+          </button>
+        </div>
       </section>
     </AppShell>
   );

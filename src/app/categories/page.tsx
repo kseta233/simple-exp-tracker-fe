@@ -6,6 +6,8 @@ import { getCategoryUsageCount } from "@/lib/utils/selectors";
 import { useAppStore } from "@/providers/app-store";
 import { UNCATEGORIZED_CATEGORY_ID } from "@/types/app";
 
+const ROW_ICON_BG = ["#f2dfc3", "#d7e6fb", "#e4d8f6", "#d8f2e6", "#f8dbe1", "#e8ebf0"];
+
 export default function CategoriesPage() {
   const { state, actions } = useAppStore();
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -70,132 +72,126 @@ export default function CategoriesPage() {
   }
 
   return (
-    <AppShell title="Categories" eyebrow="Category CRUD">
-      <section className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr]">
-        <SectionCard className="space-y-4 animate-rise">
-          <div>
-            <h2 className="font-heading text-3xl text-[var(--ink-strong)]">Add category</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-              Categories are local-only in this MVP and immediately available in the draft flow.
-            </p>
-          </div>
-
-          <label className="block text-sm font-semibold text-[var(--ink-strong)]">
-            Category name
-            <input
-              className="field mt-2"
-              value={newCategoryName}
-              maxLength={30}
-              onChange={(event) => setNewCategoryName(event.target.value)}
-              placeholder="Example: Health"
-            />
-          </label>
-
-          <button type="button" className="cta-primary" onClick={handleCreateCategory}>
-            Add category
+    <AppShell title="Categories" eyebrow="Manage Buckets">
+      <SectionCard className="space-y-4">
+        <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-muted)]">Create New</p>
+        <div className="flex gap-3">
+          <input
+            className="field"
+            value={newCategoryName}
+            maxLength={30}
+            onChange={(event) => setNewCategoryName(event.target.value)}
+            placeholder="Category Name"
+          />
+          <button type="button" className="cta-primary min-w-28" onClick={handleCreateCategory}>
+            Add
           </button>
+        </div>
+        {message ? (
+          <p className="rounded-xl border border-[rgba(186,26,26,0.18)] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
+            {message}
+          </p>
+        ) : null}
+      </SectionCard>
 
-          {message ? (
-            <p className="rounded-[22px] border border-[rgba(180,75,55,0.15)] bg-[rgba(180,75,55,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
-              {message}
-            </p>
-          ) : null}
-        </SectionCard>
+      <SectionCard className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-[40px] leading-none tracking-[-0.03em] text-[var(--ink)]">Active Categories</h3>
+          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
+            {state.categories.length} Total
+          </span>
+        </div>
 
-        <SectionCard className="animate-rise [animation-delay:120ms]">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="font-heading text-3xl text-[var(--ink-strong)]">Manage local categories</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                Deleting a used category automatically remaps old transactions to Uncategorized.
-              </p>
-            </div>
-            <div className="rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)]">
-              {state.categories.length} categories
-            </div>
-          </div>
+        <div className="space-y-3">
+          {state.categories.map((category, index) => {
+            const usageCount = categoryUsage[category.id] ?? 0;
+            const isEditing = editingId === category.id;
+            const isProtected = category.id === UNCATEGORIZED_CATEGORY_ID;
 
-          <div className="mt-6 space-y-3">
-            {state.categories.map((category) => {
-              const usageCount = categoryUsage[category.id] ?? 0;
-              const isEditing = editingId === category.id;
-              const isProtected = category.id === UNCATEGORIZED_CATEGORY_ID;
-
-              return (
-                <article
-                  key={category.id}
-                  className="rounded-[24px] border border-[var(--line)] bg-[var(--surface-strong)] p-4 shadow-[0_12px_32px_rgba(56,39,25,0.07)]"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex-1">
-                      {isEditing ? (
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                          <input
-                            className="field"
-                            value={editingValue}
-                            onChange={(event) => setEditingValue(event.target.value)}
-                            maxLength={30}
-                          />
-                          <div className="flex gap-2">
-                            <button type="button" className="cta-primary" onClick={handleRenameCategory}>
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              className="cta-secondary"
-                              onClick={() => {
-                                setEditingId(null);
-                                setEditingValue("");
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="text-xl font-semibold text-[var(--ink-strong)]">{category.name}</h3>
-                            {isProtected ? <span className="tag-chip">Protected</span> : null}
-                          </div>
-                          <p className="mt-2 text-sm text-[var(--ink-soft)]">
-                            Used by {usageCount} transaction{usageCount === 1 ? "" : "s"}
-                          </p>
-                        </>
-                      )}
+            return (
+              <article
+                key={category.id}
+                className={`rounded-3xl border p-4 ${
+                  isProtected
+                    ? "border-dashed border-[var(--line)] bg-[var(--surface-low)] opacity-80"
+                    : "border-[var(--line)] bg-[var(--surface)]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-[var(--primary)]"
+                      style={{ backgroundColor: ROW_ICON_BG[index % ROW_ICON_BG.length] }}
+                    >
+                      {category.name.slice(0, 1).toUpperCase()}
                     </div>
 
-                    {!isEditing ? (
-                      <div className="flex flex-wrap gap-2">
+                    {isEditing ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          className="field min-w-44"
+                          value={editingValue}
+                          onChange={(event) => setEditingValue(event.target.value)}
+                          maxLength={30}
+                        />
+                        <button type="button" className="cta-primary" onClick={handleRenameCategory}>
+                          Save
+                        </button>
                         <button
                           type="button"
                           className="cta-secondary"
                           onClick={() => {
-                            setEditingId(category.id);
-                            setEditingValue(category.name);
-                            setMessage(null);
+                            setEditingId(null);
+                            setEditingValue("");
                           }}
-                          disabled={isProtected}
                         >
-                          Rename
-                        </button>
-                        <button
-                          type="button"
-                          className="cta-danger"
-                          onClick={() => handleDeleteCategory(category.id, category.name)}
-                          disabled={isProtected}
-                        >
-                          Delete
+                          Cancel
                         </button>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="min-w-0">
+                        <p className="truncate text-[38px] leading-none tracking-[-0.02em] text-[var(--ink)]">{category.name}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                          {isProtected ? "Locked" : `${usageCount} linked transactions`}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        </SectionCard>
-      </section>
+
+                  {!isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="cta-secondary"
+                        disabled={isProtected}
+                        onClick={() => {
+                          setEditingId(category.id);
+                          setEditingValue(category.name);
+                          setMessage(null);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="cta-danger"
+                        disabled={isProtected}
+                        onClick={() => handleDeleteCategory(category.id, category.name)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="rounded-3xl bg-[rgba(223,228,255,0.56)] px-4 py-4 text-sm leading-7 text-[var(--primary)]">
+          Deleting a category remaps linked transactions into Uncategorized to keep records consistent.
+        </div>
+      </SectionCard>
     </AppShell>
   );
 }

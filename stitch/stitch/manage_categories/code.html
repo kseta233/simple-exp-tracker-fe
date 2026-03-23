@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Finance - Categories</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#f7f9fb",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container-low": "#f2f4f6",
+              "on-secondary-fixed-variant": "#005137",
+              "on-secondary-container": "#00714e",
+              "on-background": "#191c1e",
+              "tertiary-container": "#670019",
+              "inverse-surface": "#2d3133",
+              "outline": "#767683",
+              "surface-container-high": "#e6e8ea",
+              "on-secondary": "#ffffff",
+              "secondary": "#006c4a",
+              "tertiary-fixed-dim": "#ffb3b6",
+              "secondary-fixed-dim": "#68dba9",
+              "on-error-container": "#93000a",
+              "surface-dim": "#d8dadc",
+              "on-primary-fixed-variant": "#303c9a",
+              "outline-variant": "#c6c5d4",
+              "surface-container": "#eceef0",
+              "surface-variant": "#e0e3e5",
+              "tertiary-fixed": "#ffdada",
+              "on-primary-fixed": "#000c62",
+              "on-tertiary-fixed": "#40000c",
+              "inverse-on-surface": "#eff1f3",
+              "surface-tint": "#4955b3",
+              "on-surface-variant": "#454652",
+              "tertiary": "#40000c",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#dfe0ff",
+              "on-secondary-fixed": "#002114",
+              "on-tertiary-fixed-variant": "#920028",
+              "on-primary-container": "#8390f2",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#ff6273",
+              "error": "#ba1a1a",
+              "primary": "#000b60",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#191c1e",
+              "inverse-primary": "#bcc2ff",
+              "primary-container": "#142283",
+              "surface": "#f7f9fb",
+              "on-error": "#ffffff",
+              "secondary-fixed": "#85f8c4",
+              "background": "#f7f9fb",
+              "secondary-container": "#82f5c1",
+              "primary-fixed-dim": "#bcc2ff",
+              "on-tertiary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm shadow-indigo-900/5 transition-all duration-300 ease-in-out">
+<div class="flex justify-between items-center w-full px-5 py-3">
+<div class="flex items-center gap-4">
+<button class="text-indigo-900 dark:text-indigo-100 transition-all duration-300 ease-in-out active:scale-95 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-['Manrope'] font-bold text-xl text-indigo-950 dark:text-white">Precision Finance</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-indigo-900 dark:text-indigo-100 transition-all duration-300 ease-in-out active:scale-95 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 px-5 py-8 max-w-2xl mx-auto w-full mb-28">
+<!-- Title -->
+<div class="mb-8">
+<h2 class="font-headline font-bold text-3xl text-primary tracking-tight">Categories</h2>
+<p class="text-on-surface-variant text-sm mt-1">Manage and organize your spending buckets.</p>
+</div>
+<!-- Add Category Section -->
+<section class="bg-surface-container-low p-4 rounded-xl mb-10">
+<label class="block text-label-sm font-medium text-on-surface-variant uppercase tracking-wider mb-2 px-1">Create New</label>
+<div class="flex gap-3">
+<div class="relative flex-1">
+<input class="w-full bg-surface-container-lowest border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant font-medium transition-all" placeholder="Category Name" type="text"/>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-semibold shadow-lg shadow-primary/10 active:scale-95 transition-transform">
+                    Add
+                </button>
+</div>
+</section>
+<!-- Category List -->
+<section class="space-y-4">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline font-semibold text-lg text-on-surface">Active Categories</h3>
+<span class="text-label-sm font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-full">6 Total</span>
+</div>
+<!-- List Container -->
+<div class="space-y-2">
+<!-- Food -->
+<div class="group flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl transition-all hover:shadow-md hover:shadow-indigo-900/5 border border-transparent">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+</div>
+<span class="font-headline font-semibold text-on-surface">Food</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Transport -->
+<div class="group flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl transition-all hover:shadow-md hover:shadow-indigo-900/5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+<span class="material-symbols-outlined" data-icon="directions_car">directions_car</span>
+</div>
+<span class="font-headline font-semibold text-on-surface">Transport</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Shopping -->
+<div class="group flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl transition-all hover:shadow-md hover:shadow-indigo-900/5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<span class="font-headline font-semibold text-on-surface">Shopping</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Bills -->
+<div class="group flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl transition-all hover:shadow-md hover:shadow-indigo-900/5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+</div>
+<span class="font-headline font-semibold text-on-surface">Bills</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Entertainment -->
+<div class="group flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl transition-all hover:shadow-md hover:shadow-indigo-900/5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-700">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+</div>
+<span class="font-headline font-semibold text-on-surface">Entertainment</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Uncategorized (Protected) -->
+<div class="flex items-center justify-between p-4 bg-surface-container/50 rounded-xl border border-dashed border-outline-variant/30 opacity-70">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-semibold text-on-surface">Uncategorized</span>
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest">Locked</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="lock">lock</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Instructional Tip -->
+<div class="mt-8 p-4 rounded-xl bg-primary/5 flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="info">info</span>
+<p class="text-xs text-on-primary-fixed-variant leading-relaxed">
+                Deleting a category will prompt you to remap all existing transactions to the <span class="font-bold">Uncategorized</span> bucket to maintain record integrity.
+            </p>
+</div>
+</main>
+<!-- Modal Backdrop (Hidden by default, shown here for structure) -->
+<!-- This represents the confirmation/edit interaction described -->
+<div class="fixed inset-0 bg-primary/20 backdrop-blur-sm z-[100] flex items-center justify-center p-6 hidden">
+<div class="bg-surface-container-lowest w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+<h4 class="font-headline font-bold text-xl mb-2">Delete Category?</h4>
+<p class="text-on-surface-variant text-sm mb-6">Are you sure? All expenses in this category will be remapped to <span class="font-semibold text-on-surface">Uncategorized</span>.</p>
+<div class="flex flex-col gap-2">
+<button class="w-full bg-error text-on-error py-3 rounded-xl font-bold">Remap to Uncategorized</button>
+<button class="w-full bg-surface-container-high text-on-surface py-3 rounded-xl font-bold">Cancel</button>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-[0_-4px_24px_rgba(0,11,96,0.04)] rounded-t-3xl border-t border-slate-200/10">
+<!-- Expenses -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all duration-200 tap-highlight-transparent active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase mt-1">Expenses</span>
+</a>
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all duration-200 tap-highlight-transparent active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<!-- Categories (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 rounded-2xl px-5 py-2 scale-105 transition-transform tap-highlight-transparent active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase mt-1">Categories</span>
+</a>
+</nav>
+</body></html>

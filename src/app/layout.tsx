@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, Manrope } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import { AppStoreProvider } from "@/providers/app-store";
 import "./globals.css";
 
-const fontSans = Manrope({
+const fontHeading = Manrope({
   subsets: ["latin"],
-  variable: "--font-sans"
+  weight: ["600", "700", "800"],
+  variable: "--font-heading"
 });
 
-const fontHeading = DM_Serif_Display({
+const fontSans = Inter({
   subsets: ["latin"],
-  weight: "400",
-  variable: "--font-heading"
+  weight: ["400", "500", "600"],
+  variable: "--font-sans"
 });
 
 export const metadata: Metadata = {

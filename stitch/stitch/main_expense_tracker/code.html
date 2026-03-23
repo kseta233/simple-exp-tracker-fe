@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Finance - Expense Tracker</title>
+<!-- Google Fonts: Manrope (Display/Headline) & Inter (Body/Label) -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#f7f9fb",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container-low": "#f2f4f6",
+              "on-secondary-fixed-variant": "#005137",
+              "on-secondary-container": "#00714e",
+              "on-background": "#191c1e",
+              "tertiary-container": "#670019",
+              "inverse-surface": "#2d3133",
+              "outline": "#767683",
+              "surface-container-high": "#e6e8ea",
+              "on-secondary": "#ffffff",
+              "secondary": "#006c4a",
+              "tertiary-fixed-dim": "#ffb3b6",
+              "secondary-fixed-dim": "#68dba9",
+              "on-error-container": "#93000a",
+              "surface-dim": "#d8dadc",
+              "on-primary-fixed-variant": "#303c9a",
+              "outline-variant": "#c6c5d4",
+              "surface-container": "#eceef0",
+              "surface-variant": "#e0e3e5",
+              "tertiary-fixed": "#ffdada",
+              "on-primary-fixed": "#000c62",
+              "on-tertiary-fixed": "#40000c",
+              "inverse-on-surface": "#eff1f3",
+              "surface-tint": "#4955b3",
+              "on-surface-variant": "#454652",
+              "tertiary": "#40000c",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#dfe0ff",
+              "on-secondary-fixed": "#002114",
+              "on-tertiary-fixed-variant": "#920028",
+              "on-primary-container": "#8390f2",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#ff6273",
+              "error": "#ba1a1a",
+              "primary": "#000b60",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#191c1e",
+              "inverse-primary": "#bcc2ff",
+              "primary-container": "#142283",
+              "surface": "#f7f9fb",
+              "on-error": "#ffffff",
+              "secondary-fixed": "#85f8c4",
+              "background": "#f7f9fb",
+              "secondary-container": "#82f5c1",
+              "primary-fixed-dim": "#bcc2ff",
+              "on-tertiary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            background-color: #f7f9fb;
+            color: #191c1e;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-background min-h-screen pb-24">
+<!-- TopAppBar Component (from JSON) -->
+<header class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm shadow-indigo-900/5 flex justify-between items-center w-full px-5 py-3">
+<div class="flex items-center gap-3">
+<button class="transition-all duration-300 ease-in-out active:scale-95 text-indigo-900 dark:text-indigo-100 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-['Manrope'] font-bold text-xl text-indigo-950 dark:text-white">Precision Finance</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="transition-all duration-300 ease-in-out active:scale-95 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+</button>
+<button class="transition-all duration-300 ease-in-out active:scale-95 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<main class="max-w-xl mx-auto px-5 pt-8 space-y-8">
+<!-- Summary Strip: Editorial Card -->
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm shadow-primary/5 relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-primary/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+<p class="font-label text-label-sm text-on-surface-variant mb-1">This Month</p>
+<h2 class="font-headline font-semibold text-2xl tracking-tight text-primary">Rp 2.450.000</h2>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm shadow-primary/5 relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-secondary/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+<p class="font-label text-label-sm text-on-surface-variant mb-1">Total Transactions</p>
+<h2 class="font-headline font-semibold text-2xl tracking-tight text-on-background">18</h2>
+</div>
+</section>
+<!-- Search & Filters -->
+<section class="space-y-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+<input class="w-full bg-surface-container-highest border-none rounded-xl pl-12 pr-4 py-3.5 text-body-md focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline" placeholder="Search by title..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-5 py-2 rounded-full bg-primary text-on-primary text-label-sm font-medium flex-shrink-0">All</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm font-medium flex-shrink-0 hover:bg-surface-container-highest transition-colors">Food</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm font-medium flex-shrink-0 hover:bg-surface-container-highest transition-colors">Transport</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm font-medium flex-shrink-0 hover:bg-surface-container-highest transition-colors">Shopping</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm font-medium flex-shrink-0 hover:bg-surface-container-highest transition-colors">Bills</button>
+</div>
+</section>
+<!-- Timeline List -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-semibold text-on-surface-variant tracking-wide text-xs uppercase">Recent Activity</h3>
+<span class="font-label text-label-sm text-outline">March 2024</span>
+</div>
+<!-- Transaction Group: Today -->
+<div class="space-y-4">
+<div class="px-2 py-1 bg-surface-container-low rounded-lg inline-block">
+<span class="font-label text-[10px] font-bold text-outline uppercase tracking-widest">Today</span>
+</div>
+<!-- Transaction Item 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm shadow-primary/5 flex items-center justify-between hover:scale-[1.01] transition-transform cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<h4 class="font-body font-bold text-on-surface">Starbucks Reserve</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Food</span>
+<span class="material-symbols-outlined text-xs text-outline" data-icon="attach_file">attach_file</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">Rp 65.000</p>
+<p class="font-label text-[10px] text-outline mt-1">10:45 AM</p>
+</div>
+</div>
+<!-- Transaction Item 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm shadow-primary/5 flex items-center justify-between hover:scale-[1.01] transition-transform cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<div>
+<h4 class="font-body font-bold text-on-surface">Uniqlo Store</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Shopping</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">Rp 450.000</p>
+<p class="font-label text-[10px] text-outline mt-1">02:15 PM</p>
+</div>
+</div>
+</div>
+<!-- Transaction Group: Yesterday -->
+<div class="space-y-4 pt-4">
+<div class="px-2 py-1 bg-surface-container-low rounded-lg inline-block">
+<span class="font-label text-[10px] font-bold text-outline uppercase tracking-widest">Yesterday</span>
+</div>
+<!-- Transaction Item 3 (Positive/Income Demo) -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm shadow-primary/5 flex items-center justify-between hover:scale-[1.01] transition-transform cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="payments">payments</span>
+</div>
+<div>
+<h4 class="font-body font-bold text-on-surface">Salary Bonus</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/50 text-[10px] font-semibold text-on-secondary-container uppercase tracking-wider">Income</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-secondary">+Rp 1.200.000</p>
+<p class="font-label text-[10px] text-outline mt-1">09:00 AM</p>
+</div>
+</div>
+<!-- Transaction Item 4 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm shadow-primary/5 flex items-center justify-between hover:scale-[1.01] transition-transform cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" data-icon="directions_car">directions_car</span>
+</div>
+<div>
+<h4 class="font-body font-bold text-on-surface">Grab Ride</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Transport</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">Rp 32.000</p>
+<p class="font-label text-[10px] text-outline mt-1">08:30 PM</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-28 right-6 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-2xl shadow-xl shadow-primary/30 flex items-center justify-center active:scale-90 transition-all duration-200 z-40 group overflow-hidden">
+<span class="material-symbols-outlined text-3xl relative z-10" data-icon="add">add</span>
+<div class="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+</button>
+<!-- BottomNavBar Component (from JSON) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-t-3xl border-t border-slate-200/10 shadow-[0_-4px_24px_rgba(0,11,96,0.04)]">
+<!-- Expenses Active Tab -->
+<a class="flex flex-col items-center justify-center bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-200 rounded-2xl px-5 py-2 scale-105 transition-transform tap-highlight-transparent active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase mt-1">Expenses</span>
+</a>
+<!-- Dashboard Inactive Tab -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-indigo-600 dark:hover:text-indigo-300 tap-highlight-transparent active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<!-- Categories Inactive Tab -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-indigo-600 dark:hover:text-indigo-300 tap-highlight-transparent active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-['Inter'] font-medium text-[10px] tracking-wide uppercase mt-1">Categories</span>
+</a>
+</nav>
+</body></html>

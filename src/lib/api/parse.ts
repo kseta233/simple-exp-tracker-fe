@@ -8,10 +8,17 @@ type BackendTransaction = {
   merchant?: string;
   transactionDate?: string;
   totalAmount?: number;
+  currency?: string;
   category?: string;
+  paymentMethod?: string | null;
+  notes?: string | null;
 };
 
 type BackendResponse = {
+  requestId?: string;
+  provider?: string;
+  sourceType?: "receipt" | "bank-notification";
+  rawText?: string;
   transactions?: BackendTransaction[];
   parsed?: BackendTransaction;
   confidence?: {
@@ -129,7 +136,7 @@ function createDraft(params: {
   };
 }
 
-async function parseWithBackend(file: File, text: string): Promise<BackendResponse | null> {
+async function parseWithBackend(file: File): Promise<BackendResponse | null> {
   const endpoint = process.env.NEXT_PUBLIC_OCR_API_URL;
 
   if (!endpoint) {
@@ -148,10 +155,6 @@ async function parseWithBackend(file: File, text: string): Promise<BackendRespon
 
   const formData = new FormData();
   formData.append("file", file);
-
-  if (text) {
-    formData.append("text", text);
-  }
 
   const response = await fetch(`${endpoint}/api/v1/ocr/process`, {
     method: "POST",
@@ -178,7 +181,7 @@ export async function parseExpenseInput(
 
   if (request.file) {
     try {
-      const backendResult = await parseWithBackend(request.file, text);
+      const backendResult = await parseWithBackend(request.file);
       const responseTransactions = backendResult?.transactions?.length
         ? backendResult.transactions
         : backendResult?.parsed
@@ -187,19 +190,24 @@ export async function parseExpenseInput(
 
       if (responseTransactions.length > 0) {
         return {
-          drafts: responseTransactions.map((item) =>
-            createDraft({
-              text: `${item.merchant ?? ""} ${text}`.trim(),
+          drafts: responseTransactions.map((item, index) => {
+            const composedText = [item.merchant, item.category, text].filter(Boolean).join(" ").trim();
+            const titleFromBackend = item.merchant?.trim() || item.category?.trim() || text.trim();
+
+            return createDraft({
+              text: composedText || "OCR transaction",
               attachmentUri,
               categories,
-              amount: item.totalAmount ?? null,
+              amount: typeof item.totalAmount === "number" ? item.totalAmount : null,
               merchant: item.merchant ?? "",
-              title: item.merchant ?? text,
+              title:
+                titleFromBackend ||
+                `Transaction ${index + 1}`,
               dateTrx: item.transactionDate ?? getTodayDate(),
               parseConfidence: backendResult?.confidence?.overall ?? null,
               source
-            })
-          )
+            });
+          })
         };
       }
     } catch {

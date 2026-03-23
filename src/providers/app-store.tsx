@@ -253,29 +253,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         const validated = normalizeDrafts(response.drafts, stateRef.current.categories);
         dispatch({ type: "set-drafts", payload: validated });
       } catch (error) {
-        dispatch({ type: "set-error", payload: "We couldn’t fully read this. Please review before saving." });
-        const fallbackDrafts = normalizeDrafts(
-          [
-            {
-              id: createId("draft"),
-              merchant: request.text?.trim() ?? "",
-              title: request.text?.trim() ?? "",
-              amount: null,
-              dateTrx: new Date().toISOString().slice(0, 10),
-              categoryId: UNCATEGORIZED_CATEGORY_ID,
-              categoryLabel: "Uncategorized",
-              attachmentUri: request.attachmentUri ?? null,
-              parseConfidence: null,
-              errors: {},
-              isValid: false
-            }
-          ],
-          stateRef.current.categories
-        );
-        dispatch({ type: "set-drafts", payload: fallbackDrafts });
-        if (error instanceof Error) {
-          dispatch({ type: "set-error", payload: "We couldn’t fully read this. Please review before saving." });
-        }
+        dispatch({ type: "set-drafts", payload: [] });
+        dispatch({
+          type: "set-error",
+          payload: error instanceof Error ? error.message : "OCR parse failed. Please try another image."
+        });
       } finally {
         dispatch({ type: "set-parsing", payload: false });
       }

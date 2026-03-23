@@ -96,7 +96,7 @@ export default function CategoriesPage() {
 
       <SectionCard className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-heading text-[40px] leading-none tracking-[-0.03em] text-[var(--ink)]">Active Categories</h3>
+          <h3 className="font-heading text-3xl leading-none tracking-[-0.02em] text-[var(--ink)]">Active Categories</h3>
           <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
             {state.categories.length} Total
           </span>
@@ -150,7 +150,7 @@ export default function CategoriesPage() {
                       </div>
                     ) : (
                       <div className="min-w-0">
-                        <p className="truncate text-[38px] leading-none tracking-[-0.02em] text-[var(--ink)]">{category.name}</p>
+                        <p className="truncate text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">{category.name}</p>
                         <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                           {isProtected ? "Locked" : `${usageCount} linked transactions`}
                         </p>

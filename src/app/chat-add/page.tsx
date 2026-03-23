@@ -110,14 +110,14 @@ export default function ChatAddPage() {
         <div className="flex border-b border-[var(--line)]">
           <button
             type="button"
-            className={`flex-1 pb-3 text-center text-lg font-semibold ${tab === "quick" ? "tab-active" : "text-[var(--ink-muted)]"}`}
+            className={`flex-1 pb-3 text-center text-base font-semibold ${tab === "quick" ? "tab-active" : "text-[var(--ink-muted)]"}`}
             onClick={() => setTab("quick")}
           >
             Quick Add (AI)
           </button>
           <button
             type="button"
-            className={`flex-1 pb-3 text-center text-lg font-semibold ${tab === "manual" ? "tab-active" : "text-[var(--ink-muted)]"}`}
+            className={`flex-1 pb-3 text-center text-base font-semibold ${tab === "manual" ? "tab-active" : "text-[var(--ink-muted)]"}`}
             onClick={() => setTab("manual")}
           >
             Manual Entry
@@ -174,7 +174,7 @@ export default function ChatAddPage() {
         ) : (
           <div className="space-y-4">
             <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-5">
-              <h3 className="font-heading text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">Expense Details</h3>
+              <h3 className="font-heading text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">Expense Details</h3>
               <div className="mt-4 grid gap-3">
                 <input
                   className="field"
@@ -237,7 +237,7 @@ export default function ChatAddPage() {
 
       <SectionCard className="space-y-4">
         <div className="flex items-end justify-between">
-          <h3 className="font-heading text-[40px] leading-none tracking-[-0.03em] text-[var(--ink)]">Confirmation Cards</h3>
+          <h3 className="font-heading text-3xl leading-none tracking-[-0.02em] text-[var(--ink)]">Confirmation Cards</h3>
           <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
             {state.draftTransactions.length} drafts
           </span>
@@ -255,7 +255,7 @@ export default function ChatAddPage() {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-muted)]">Draft {index + 1}</p>
-                    <h4 className="mt-1 text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">
+                    <h4 className="mt-1 text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">
                       {draft.title || draft.merchant || "Untitled"}
                     </h4>
                   </div>
@@ -325,7 +325,7 @@ export default function ChatAddPage() {
         )}
       </SectionCard>
 
-      <section className="floating-bar fixed bottom-24 left-0 right-0 z-20 border-y border-[var(--line)] px-5 py-4">
+      <section className="floating-bar safe-bottom fixed bottom-20 left-0 right-0 z-20 border-y border-[var(--line)] px-5 py-3">
         <div className="mx-auto flex w-full max-w-xl gap-3">
           <button
             type="button"

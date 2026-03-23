@@ -25,7 +25,7 @@ export function AppShell({
 
   return (
     <main className="min-h-screen bg-[var(--background)] pb-28">
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[rgba(247,249,251,0.85)] px-5 py-4 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[rgba(247,249,251,0.85)] px-5 py-3 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-xl items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -35,7 +35,7 @@ export function AppShell({
             >
               <span className="text-xl">=</span>
             </button>
-            <h1 className="font-heading text-[34px] leading-none tracking-[-0.03em] text-[var(--ink)]">Precision Finance</h1>
+            <h1 className="font-heading text-[28px] leading-none tracking-[-0.02em] text-[var(--ink)]">Precision Finance</h1>
           </div>
           <button
             type="button"
@@ -47,13 +47,13 @@ export function AppShell({
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-xl px-5 pt-7">
+      <section className="mx-auto w-full max-w-xl px-5 pt-6">
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             {eyebrow ? (
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">{eyebrow}</p>
             ) : null}
-            <h2 className="mt-2 font-heading text-[50px] leading-[0.92] tracking-[-0.04em] text-[var(--primary)]">
+            <h2 className="mt-2 font-heading text-[42px] leading-[0.95] tracking-[-0.03em] text-[var(--primary)]">
               {title}
             </h2>
           </div>
@@ -98,7 +98,7 @@ export function SectionCard({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <section className={cn("panel rounded-3xl p-5", className)}>{children}</section>;
+  return <section className={cn("panel rounded-3xl p-4", className)}>{children}</section>;
 }
 
 export function EmptyState({

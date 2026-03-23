@@ -102,13 +102,13 @@ export default function ExpensesPage() {
       <section className="grid grid-cols-2 gap-4">
         <SectionCard className="animate-rise">
           <p className="text-sm text-[var(--ink-muted)]">This Month</p>
-          <p className="mt-2 text-5xl font-semibold tracking-[-0.03em] text-[var(--primary)]">
+          <p className="mt-2 text-4xl font-semibold tracking-[-0.03em] text-[var(--primary)]">
             {formatCurrency(monthTotal)}
           </p>
         </SectionCard>
         <SectionCard className="animate-rise [animation-delay:90ms]">
           <p className="text-sm text-[var(--ink-muted)]">Total Transactions</p>
-          <p className="mt-2 text-5xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+          <p className="mt-2 text-4xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
             {state.transactions.length}
           </p>
         </SectionCard>
@@ -161,7 +161,7 @@ export default function ExpensesPage() {
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
             Recent Activity
           </p>
-          <p className="text-[34px] leading-none text-[var(--ink-muted)]">{monthLabel}</p>
+          <p className="text-xl leading-none text-[var(--ink-muted)]">{monthLabel}</p>
         </div>
 
         {state.loading ? (
@@ -201,7 +201,7 @@ export default function ExpensesPage() {
                         {ICON_BY_CATEGORY[categoryId] ?? "?"}
                       </div>
                       <div>
-                        <h3 className="text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">
+                        <h3 className="text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">
                           {transaction.title}
                         </h3>
                         <div className="mt-2 flex items-center gap-2">
@@ -213,7 +213,7 @@ export default function ExpensesPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[40px] leading-none tracking-[-0.03em] text-[var(--ink)]">
+                      <p className="text-3xl leading-none tracking-[-0.02em] text-[var(--ink)]">
                         {formatCurrency(transaction.amount)}
                       </p>
                       <p className="mt-2 text-sm text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>

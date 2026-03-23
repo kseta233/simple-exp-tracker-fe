@@ -26,6 +26,13 @@ type BackendResponse = {
   };
 };
 
+type BackendErrorResponse = {
+  error?: {
+    code?: string;
+    message?: string;
+  };
+};
+
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   food: ["food", "lunch", "dinner", "breakfast", "coffee", "cafe", "restaurant", "kfc"],
   transport: ["transport", "grab", "gocar", "taxi", "train", "bus", "fuel", "tol"],
@@ -136,7 +143,7 @@ function createDraft(params: {
   };
 }
 
-async function parseWithBackend(file: File): Promise<BackendResponse | null> {
+async function parseWithBackend(file: File, text: string): Promise<BackendResponse | null> {
   const endpoint = process.env.NEXT_PUBLIC_OCR_API_URL;
 
   if (!endpoint) {
@@ -155,8 +162,12 @@ async function parseWithBackend(file: File): Promise<BackendResponse | null> {
 
   const formData = new FormData();
   formData.append("file", file);
+  if (text) {
+    formData.append("text", text);
+  }
 
-  const response = await fetch(`${endpoint}/api/v1/ocr/process`, {
+  const normalizedEndpoint = endpoint.replace(/\/$/, "");
+  const response = await fetch(`${normalizedEndpoint}/api/v1/ocr/process`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${bearerToken}`
@@ -165,7 +176,18 @@ async function parseWithBackend(file: File): Promise<BackendResponse | null> {
   });
 
   if (!response.ok) {
-    throw new Error(`OCR request failed with status ${response.status}`);
+    let message = `OCR request failed with status ${response.status}`;
+
+    try {
+      const errorPayload = (await response.json()) as BackendErrorResponse;
+      if (errorPayload.error?.message) {
+        message = errorPayload.error.message;
+      }
+    } catch {
+      // Keep default status message when non-JSON body is returned.
+    }
+
+    throw new Error(message);
   }
 
   return (await response.json()) as BackendResponse;
@@ -180,39 +202,37 @@ export async function parseExpenseInput(
   const source = inferSource(text, Boolean(request.file));
 
   if (request.file) {
-    try {
-      const backendResult = await parseWithBackend(request.file);
-      const responseTransactions = backendResult?.transactions?.length
-        ? backendResult.transactions
-        : backendResult?.parsed
-          ? [backendResult.parsed]
-          : [];
+    const backendResult = await parseWithBackend(request.file, text);
+    const responseTransactions = backendResult?.transactions?.length
+      ? backendResult.transactions
+      : backendResult?.parsed
+        ? [backendResult.parsed]
+        : [];
 
-      if (responseTransactions.length > 0) {
-        return {
-          drafts: responseTransactions.map((item, index) => {
-            const composedText = [item.merchant, item.category, text].filter(Boolean).join(" ").trim();
-            const titleFromBackend = item.merchant?.trim() || item.category?.trim() || text.trim();
-
-            return createDraft({
-              text: composedText || "OCR transaction",
-              attachmentUri,
-              categories,
-              amount: typeof item.totalAmount === "number" ? item.totalAmount : null,
-              merchant: item.merchant ?? "",
-              title:
-                titleFromBackend ||
-                `Transaction ${index + 1}`,
-              dateTrx: item.transactionDate ?? getTodayDate(),
-              parseConfidence: backendResult?.confidence?.overall ?? null,
-              source
-            });
-          })
-        };
-      }
-    } catch {
-      // Fall through to local draft generation.
+    if (responseTransactions.length === 0) {
+      throw new Error("OCR returned no transactions from the uploaded file.");
     }
+
+    return {
+      drafts: responseTransactions.map((item, index) => {
+        const composedText = [item.merchant, item.category, text].filter(Boolean).join(" ").trim();
+        const titleFromBackend = item.merchant?.trim() || item.category?.trim() || text.trim();
+
+        return createDraft({
+          text: composedText || "OCR transaction",
+          attachmentUri,
+          categories,
+          amount: typeof item.totalAmount === "number" ? item.totalAmount : null,
+          merchant: item.merchant ?? "",
+          title:
+            titleFromBackend ||
+            `Transaction ${index + 1}`,
+          dateTrx: item.transactionDate ?? getTodayDate(),
+          parseConfidence: backendResult?.confidence?.overall ?? null,
+          source
+        });
+      })
+    };
   }
 
   const fragments = text

@@ -26,25 +26,25 @@ export default function DashboardPage() {
 
   return (
     <AppShell title="Dashboard" eyebrow="Analytics Overview">
-      <section className="panel-hero relative overflow-hidden rounded-[2rem] p-7 text-white">
+      <section className="panel-hero relative overflow-hidden rounded-[2rem] p-6 text-white">
         <p className="text-sm text-white/70">Total Spend: Current Month</p>
-        <p className="mt-2 text-6xl font-extrabold tracking-[-0.04em]">{formatCurrency(total)}</p>
+        <p className="mt-2 text-5xl font-extrabold tracking-[-0.04em]">{formatCurrency(total)}</p>
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
             <p className="text-xs uppercase tracking-[0.15em] text-white/70">Budget Left</p>
-            <p className="mt-1 text-4xl font-bold tracking-[-0.03em]">{formatCurrency(Math.max(0, 4000000 - total))}</p>
+            <p className="mt-1 text-3xl font-bold tracking-[-0.03em]">{formatCurrency(Math.max(0, 4000000 - total))}</p>
           </div>
           <div className="rounded-3xl bg-white/12 p-4 backdrop-blur">
             <p className="text-xs uppercase tracking-[0.15em] text-white/70">Transactions</p>
-            <p className="mt-1 text-4xl font-bold tracking-[-0.03em]">{monthTransactions.length}</p>
+            <p className="mt-1 text-3xl font-bold tracking-[-0.03em]">{monthTransactions.length}</p>
           </div>
         </div>
       </section>
 
       <SectionCard className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-heading text-4xl tracking-[-0.03em] text-[var(--ink)]">Category Breakdown</h3>
-          <Link className="text-lg font-semibold text-[var(--primary)]" href="/expenses">
+          <h3 className="font-heading text-3xl tracking-[-0.02em] text-[var(--ink)]">Category Breakdown</h3>
+          <Link className="text-base font-semibold text-[var(--primary)]" href="/expenses">
             View History
           </Link>
         </div>
@@ -73,13 +73,13 @@ export default function DashboardPage() {
               >
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">{item.name}</p>
+                      <p className="text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">{item.name}</p>
                     <p className="mt-1 text-sm uppercase tracking-[0.14em] text-[var(--ink-muted)]">
                       {item.count} items
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[34px] leading-none tracking-[-0.02em] text-[var(--ink)]">{item.formattedTotal}</p>
+                      <p className="text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">{item.formattedTotal}</p>
                     <p className="mt-1 text-sm uppercase tracking-[0.14em] text-[var(--ink-muted)]">{item.percentage}% of total</p>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { createId } from "@/lib/utils/id";
 import { getTodayDate } from "@/lib/utils/date";
+import { supabase } from "@/lib/supabase/client";
 import type { Category, DraftTransaction, ParseRequest, ParseResponse, TransactionSource } from "@/types/app";
 import { UNCATEGORIZED_CATEGORY_ID } from "@/types/app";
 
@@ -135,6 +136,16 @@ async function parseWithBackend(file: File, text: string): Promise<BackendRespon
     return null;
   }
 
+  const session = supabase ? await supabase.auth.getSession() : null;
+  const accessToken = session?.data.session?.access_token;
+  const devToken = process.env.NEXT_PUBLIC_OCR_DEV_BEARER_TOKEN;
+  const fallbackToken = process.env.NODE_ENV === "production" ? null : "test-token";
+  const bearerToken = accessToken ?? devToken ?? fallbackToken;
+
+  if (!bearerToken) {
+    throw new Error("Missing bearer token for OCR request");
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
@@ -144,6 +155,9 @@ async function parseWithBackend(file: File, text: string): Promise<BackendRespon
 
   const response = await fetch(`${endpoint}/api/v1/ocr/process`, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${bearerToken}`
+    },
     body: formData
   });
 

@@ -1,18 +1,16 @@
 import Dexie, { type Table } from "dexie";
-import type { FinanceEntry, OCRResult, RawDocument } from "@/features/expenses/types";
+import type { Category, Transaction } from "@/types/app";
 
 export class ExpenseTrackerDB extends Dexie {
-  rawDocuments!: Table<RawDocument, string>;
-  ocrResults!: Table<OCRResult, string>;
-  financeEntries!: Table<FinanceEntry, string>;
+  transactions!: Table<Transaction, string>;
+  categories!: Table<Category, string>;
 
   constructor() {
-    super("expense-tracker-db");
+    super("expense-tracker-mvp-db");
 
     this.version(1).stores({
-      rawDocuments: "id, userId, createdAt, fileName",
-      ocrResults: "id, rawDocumentId, processedAt",
-      financeEntries: "id, transactionDate, merchant, status, category"
+      transactions: "id, dateTrx, createdAt, categoryId, title, merchant",
+      categories: "id, name, updatedAt, isDefault"
     });
   }
 }

@@ -1,0 +1,215 @@
+import { createId } from "@/lib/utils/id";
+import { getTodayDate } from "@/lib/utils/date";
+import type { Category, DraftTransaction, ParseRequest, ParseResponse, TransactionSource } from "@/types/app";
+import { UNCATEGORIZED_CATEGORY_ID } from "@/types/app";
+
+type BackendTransaction = {
+  merchant?: string;
+  transactionDate?: string;
+  totalAmount?: number;
+  category?: string;
+};
+
+type BackendResponse = {
+  transactions?: BackendTransaction[];
+  parsed?: BackendTransaction;
+  confidence?: {
+    overall?: number;
+  };
+};
+
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  food: ["food", "lunch", "dinner", "breakfast", "coffee", "cafe", "restaurant", "kfc"],
+  transport: ["transport", "grab", "gocar", "taxi", "train", "bus", "fuel", "tol"],
+  shopping: ["shop", "shopping", "mart", "store", "market", "tokopedia", "shopee"],
+  bills: ["bill", "internet", "electric", "pln", "water", "postpaid"],
+  entertainment: ["movie", "netflix", "spotify", "game", "concert"]
+};
+
+function inferSource(text: string, hasFile: boolean): TransactionSource {
+  if (text && hasFile) {
+    return "text+photo";
+  }
+
+  if (hasFile) {
+    return "photo";
+  }
+
+  return "manual_text";
+}
+
+function parseAmount(fragment: string): number | null {
+  const lowered = fragment.toLowerCase();
+  const compact = lowered.replace(/\s+/g, "");
+  const multiplierMatch = compact.match(/(?:rp)?(\d+(?:[.,]\d+)?)(k|rb|jt)/i);
+
+  if (multiplierMatch) {
+    const value = Number(multiplierMatch[1].replace(/,/g, "."));
+    const multiplier = multiplierMatch[2].toLowerCase();
+
+    if (multiplier === "k" || multiplier === "rb") {
+      return Math.round(value * 1000);
+    }
+
+    if (multiplier === "jt") {
+      return Math.round(value * 1000000);
+    }
+  }
+
+  const currencyMatch = fragment.match(/(?:rp\s*)?(\d{1,3}(?:[.,]\d{3})+|\d{4,})/i);
+
+  if (currencyMatch) {
+    return Number(currencyMatch[1].replace(/[.,]/g, ""));
+  }
+
+  return null;
+}
+
+function inferCategory(text: string, categories: Category[]): Category | undefined {
+  const lowered = text.toLowerCase();
+  const directMatch = categories.find((category) => lowered.includes(category.name.toLowerCase()));
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const keywordEntry = Object.entries(CATEGORY_KEYWORDS).find(([, keywords]) =>
+    keywords.some((keyword) => lowered.includes(keyword))
+  );
+
+  if (!keywordEntry) {
+    return categories.find((category) => category.id === UNCATEGORIZED_CATEGORY_ID);
+  }
+
+  return categories.find((category) => category.id === keywordEntry[0]);
+}
+
+function normalizeTitle(sourceText: string): { title: string; merchant: string } {
+  const text = sourceText.replace(/(?:rp\s*)?\d[\d.,kKrbjt\s]*/g, " ").trim();
+  const cleaned = text.replace(/\s+/g, " ");
+
+  if (!cleaned) {
+    return { title: "", merchant: "" };
+  }
+
+  return {
+    title: cleaned,
+    merchant: cleaned
+  };
+}
+
+function createDraft(params: {
+  text: string;
+  attachmentUri?: string | null;
+  categories: Category[];
+  amount?: number | null;
+  merchant?: string;
+  title?: string;
+  dateTrx?: string;
+  parseConfidence?: number | null;
+  source: TransactionSource;
+}): DraftTransaction {
+  const fallbackCategory = inferCategory(params.text, params.categories) ?? null;
+  const title = params.title ?? normalizeTitle(params.text).title;
+  const merchant = params.merchant ?? normalizeTitle(params.text).merchant;
+
+  return {
+    id: createId("draft"),
+    merchant,
+    title: title || merchant,
+    amount: params.amount ?? parseAmount(params.text),
+    dateTrx: params.dateTrx ?? getTodayDate(),
+    categoryId: fallbackCategory?.id ?? null,
+    categoryLabel: fallbackCategory?.name ?? null,
+    attachmentUri: params.attachmentUri ?? null,
+    parseConfidence: params.parseConfidence ?? null,
+    errors: {},
+    isValid: false
+  };
+}
+
+async function parseWithBackend(file: File, text: string): Promise<BackendResponse | null> {
+  const endpoint = process.env.NEXT_PUBLIC_OCR_API_URL;
+
+  if (!endpoint) {
+    return null;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  if (text) {
+    formData.append("text", text);
+  }
+
+  const response = await fetch(`${endpoint}/api/v1/ocr/process`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error(`OCR request failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as BackendResponse;
+}
+
+export async function parseExpenseInput(
+  request: ParseRequest,
+  categories: Category[]
+): Promise<ParseResponse> {
+  const text = request.text?.trim() ?? "";
+  const attachmentUri = request.attachmentUri ?? null;
+  const source = inferSource(text, Boolean(request.file));
+
+  if (request.file) {
+    try {
+      const backendResult = await parseWithBackend(request.file, text);
+      const responseTransactions = backendResult?.transactions?.length
+        ? backendResult.transactions
+        : backendResult?.parsed
+          ? [backendResult.parsed]
+          : [];
+
+      if (responseTransactions.length > 0) {
+        return {
+          drafts: responseTransactions.map((item) =>
+            createDraft({
+              text: `${item.merchant ?? ""} ${text}`.trim(),
+              attachmentUri,
+              categories,
+              amount: item.totalAmount ?? null,
+              merchant: item.merchant ?? "",
+              title: item.merchant ?? text,
+              dateTrx: item.transactionDate ?? getTodayDate(),
+              parseConfidence: backendResult?.confidence?.overall ?? null,
+              source
+            })
+          )
+        };
+      }
+    } catch {
+      // Fall through to local draft generation.
+    }
+  }
+
+  const fragments = text
+    ? text
+        .split(/\n+/)
+        .map((fragment) => fragment.trim())
+        .filter(Boolean)
+    : [];
+
+  const draftInputs = fragments.length > 0 ? fragments : [text || "Manual expense"];
+
+  return {
+    drafts: draftInputs.map((fragment) =>
+      createDraft({
+        text: fragment,
+        attachmentUri,
+        categories,
+        source
+      })
+    )
+  };
+}

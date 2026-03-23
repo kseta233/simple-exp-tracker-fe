@@ -1,0 +1,11 @@
+{
+  "name": "Simple Expense Tracker",
+  "short_name": "Expenses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#ea580c",
+  "description": "Local-first expense tracker with OCR review flow.",
+  "icons": []
+}
+

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const sourceTypeSchema = z.enum(["receipt", "bank-notification"]);
+
 export const parsedExpenseSchema = z.object({
   merchant: z.string().default("Unknown merchant"),
   transactionDate: z.string(),
@@ -14,8 +16,10 @@ export const parsedExpenseSchema = z.object({
 export const ocrResponseSchema = z.object({
   requestId: z.string(),
   provider: z.string(),
+  sourceType: sourceTypeSchema,
   rawText: z.string(),
   parsed: parsedExpenseSchema,
+  transactions: z.array(parsedExpenseSchema),
   confidence: z.object({
     overall: z.number(),
     fields: z.record(z.number())

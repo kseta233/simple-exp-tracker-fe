@@ -75,23 +75,66 @@ export default function UploadPage() {
 
         <article className="rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">2. Review normalized OCR output</h2>
+
+          {ocrResult?.sourceType ? (
+            <span
+              className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                ocrResult.sourceType === "bank-notification"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-green-100 text-green-700"
+              }`}
+            >
+              {ocrResult.sourceType === "bank-notification" ? "Bank Notification" : "Receipt"}
+              {ocrResult.transactions.length > 1
+                ? ` · ${ocrResult.transactions.length} transactions`
+                : ""}
+            </span>
+          ) : null}
+
+          {ocrResult && ocrResult.transactions.length > 1 ? (
+            <div className="mt-4 space-y-3 text-sm text-slate-700">
+              {ocrResult.transactions.map((trx, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-slate-200 p-4 space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-slate-900">
+                      #{index + 1} {trx.merchant}
+                    </p>
+                    <p className="font-semibold text-slate-900">
+                      {trx.currency} {trx.totalAmount.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <p>{trx.transactionDate}</p>
+                    <p>{trx.paymentMethod ?? "-"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4 text-sm text-slate-700">
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <p className="font-medium text-slate-900">Merchant</p>
+                <p>{ocrResult?.parsed.merchant ?? "Waiting for OCR result"}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <p className="font-medium text-slate-900">Transaction date</p>
+                <p>{ocrResult?.parsed.transactionDate ?? "-"}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <p className="font-medium text-slate-900">Total amount</p>
+                <p>
+                  {ocrResult
+                    ? `${ocrResult.parsed.currency} ${ocrResult.parsed.totalAmount.toLocaleString()}`
+                    : "-"}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 space-y-4 text-sm text-slate-700">
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-medium text-slate-900">Merchant</p>
-              <p>{ocrResult?.parsed.merchant ?? "Waiting for OCR result"}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-medium text-slate-900">Transaction date</p>
-              <p>{ocrResult?.parsed.transactionDate ?? "-"}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-medium text-slate-900">Total amount</p>
-              <p>
-                {ocrResult
-                  ? `${ocrResult.parsed.currency} ${ocrResult.parsed.totalAmount.toLocaleString()}`
-                  : "-"}
-              </p>
-            </div>
             <div className="rounded-2xl border border-slate-200 p-4">
               <p className="font-medium text-slate-900">Provider</p>
               <p>{ocrResult?.provider ?? "-"}</p>

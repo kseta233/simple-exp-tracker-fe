@@ -152,13 +152,10 @@ async function parseWithBackend(file: File, text: string): Promise<BackendRespon
 
   const session = supabase ? await supabase.auth.getSession() : null;
   const accessToken = session?.data.session?.access_token;
+  const configuredToken = process.env.NEXT_PUBLIC_OCR_BEARER_TOKEN;
   const devToken = process.env.NEXT_PUBLIC_OCR_DEV_BEARER_TOKEN;
-  const fallbackToken = process.env.NODE_ENV === "production" ? null : "test-token";
-  const bearerToken = accessToken ?? devToken ?? fallbackToken;
-
-  if (!bearerToken) {
-    throw new Error("Missing bearer token for OCR request");
-  }
+  const fallbackToken = "temporary-token";
+  const bearerToken = accessToken ?? configuredToken ?? devToken ?? fallbackToken;
 
   const formData = new FormData();
   formData.append("file", file);

@@ -29,14 +29,20 @@ export const ocrResponseSchema = z.object({
 
 export type OCRResponse = z.infer<typeof ocrResponseSchema>;
 
-export async function submitForOCR(file: File, token: string): Promise<OCRResponse> {
+export async function submitForOCR(file: File, token?: string): Promise<OCRResponse> {
   const formData = new FormData();
   formData.append("file", file);
+
+  const resolvedToken =
+    token ??
+    process.env.NEXT_PUBLIC_OCR_BEARER_TOKEN ??
+    process.env.NEXT_PUBLIC_OCR_DEV_BEARER_TOKEN ??
+    "temporary-token";
 
   const response = await fetch(`${process.env.NEXT_PUBLIC_OCR_API_URL}/api/v1/ocr/process`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${resolvedToken}`
     },
     body: formData
   });

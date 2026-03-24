@@ -13,11 +13,23 @@ The frontend is a Next.js PWA starter for upload, OCR review, and local-first ex
 
 ## Google Sign-In (Supabase)
 
-1. In Supabase Dashboard, go to **Authentication → Providers → Google** and enable Google provider.
-2. Add your Google OAuth client ID and secret in Supabase.
-3. In Supabase Dashboard, go to **Authentication → URL Configuration** and allow these redirect URLs:
-	- `http://localhost:3000/expenses`
-	- Your deployed URL, for example `https://your-app.vercel.app/expenses`
+### Step 1 — Google Cloud Console
+
+1. Go to APIs & Services → Credentials → your OAuth 2.0 Client ID.
+2. Under **Authorized redirect URIs**, add the Supabase callback URL:
+   ```
+   https://<your-supabase-project-ref>.supabase.co/auth/v1/callback
+   ```
+   This is what Google redirects to after the user consents. If this entry is missing you get **400: redirect_uri_mismatch**.
+
+### Step 2 — Supabase Dashboard
+
+1. Go to **Authentication → Providers → Google**, enable it, and paste your Google OAuth client ID and secret.
+2. Go to **Authentication → URL Configuration → Redirect URLs**, add:
+   - `http://localhost:3000/expenses` (local dev)
+   - `https://your-app.vercel.app/expenses` (production)
+
+   These are the app URLs Supabase is allowed to forward the user to after handling the callback.
 
 ## Implementation Notes
 

@@ -75,7 +75,7 @@ export default function CategoriesPage() {
     <AppShell title="Categories" eyebrow="Manage Buckets">
       <SectionCard className="space-y-4">
         <p className="type-label uppercase tracking-[0.2em] text-[var(--ink-muted)]">Create New</p>
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <input
             className="field"
             value={newCategoryName}
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
             onChange={(event) => setNewCategoryName(event.target.value)}
             placeholder="Category Name"
           />
-          <button type="button" className="cta-primary min-w-28" onClick={handleCreateCategory}>
+          <button type="button" className="cta-primary w-full sm:min-w-28 sm:w-auto" onClick={handleCreateCategory}>
             Add
           </button>
         </div>
@@ -95,9 +95,9 @@ export default function CategoriesPage() {
       </SectionCard>
 
       <SectionCard className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="type-headline text-[var(--ink)]">Active Categories</h3>
-          <span className="type-body rounded-full bg-[var(--surface-high)] px-3 py-1 text-[var(--ink-muted)]">
+        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+          <h3 className="text-5xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-4xl">Active Categories</h3>
+          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
             {state.categories.length} Total
           </span>
         </div>
@@ -117,7 +117,7 @@ export default function CategoriesPage() {
                     : "border-[var(--line)] bg-[var(--surface)]"
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 items-center gap-4">
                     <div
                       className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-[var(--primary)]"
@@ -127,9 +127,9 @@ export default function CategoriesPage() {
                     </div>
 
                     {isEditing ? (
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                         <input
-                          className="field min-w-44"
+                          className="field w-full sm:min-w-44"
                           value={editingValue}
                           onChange={(event) => setEditingValue(event.target.value)}
                           maxLength={30}
@@ -150,7 +150,7 @@ export default function CategoriesPage() {
                       </div>
                     ) : (
                       <div className="min-w-0">
-                        <p className="type-title truncate text-[var(--ink)]">{category.name}</p>
+                        <p className="truncate text-4xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">{category.name}</p>
                         <p className="type-label mt-1 uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                           {isProtected ? "Locked" : `${usageCount} linked transactions`}
                         </p>
@@ -159,7 +159,7 @@ export default function CategoriesPage() {
                   </div>
 
                   {!isEditing ? (
-                    <div className="flex items-center gap-2">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:items-center">
                       <button
                         type="button"
                         className="cta-secondary"

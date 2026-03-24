@@ -24,8 +24,8 @@ export function AppShell({
   const pathname = usePathname();
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-28">
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[rgba(247,249,251,0.85)] px-5 py-3 backdrop-blur-xl">
+    <main className="min-h-screen bg-[var(--background)] pb-32">
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[rgba(247,249,251,0.85)] px-4 py-3 backdrop-blur-xl sm:px-5">
         <div className="mx-auto flex w-full max-w-xl items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -35,7 +35,7 @@ export function AppShell({
             >
               <span className="text-xl">≡</span>
             </button>
-            <h1 className="font-heading text-xl font-bold tracking-[-0.01em] text-[var(--ink)]">Precision Finance</h1>
+            <h1 className="font-heading text-lg font-bold tracking-[-0.01em] text-[var(--ink)] sm:text-xl">Precision Finance</h1>
           </div>
           <button
             type="button"
@@ -47,8 +47,8 @@ export function AppShell({
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-xl px-5 pt-6">
-        <div className="mb-6 flex items-end justify-between gap-4">
+      <section className="mx-auto w-full max-w-xl px-4 pt-5 sm:px-5 sm:pt-6">
+        <div className="mb-5 flex flex-col items-start gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
             {eyebrow ? (
               <p className="type-label font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">{eyebrow}</p>
@@ -60,11 +60,11 @@ export function AppShell({
           {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
         </div>
 
-        <section className="space-y-6">{children}</section>
+        <section className="space-y-5 sm:space-y-6">{children}</section>
       </section>
 
-      <nav className="safe-bottom floating-bar fixed bottom-0 left-0 right-0 z-30 rounded-t-[28px] px-4 pb-4 pt-3 shadow-[0_-8px_22px_rgba(0,11,96,0.06)]">
-        <ul className="mx-auto grid w-full max-w-xl grid-cols-3 gap-3">
+      <nav className="safe-bottom floating-bar fixed bottom-0 left-0 right-0 z-30 rounded-t-[28px] px-3 pb-3 pt-2 shadow-[0_-8px_22px_rgba(0,11,96,0.06)] sm:px-4 sm:pb-4 sm:pt-3">
+        <ul className="mx-auto grid w-full max-w-xl grid-cols-3 gap-2 sm:gap-3">
           {navItems.map((item) => {
             const active = pathname === item.href;
 
@@ -73,14 +73,14 @@ export function AppShell({
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex min-h-16 flex-col items-center justify-center rounded-2xl px-3 text-center transition",
+                    "flex min-h-14 flex-col items-center justify-center rounded-2xl px-2 text-center transition sm:min-h-16 sm:px-3",
                     active
                       ? "bg-[var(--primary-soft)] text-[var(--primary)]"
                       : "text-[var(--ink-muted)] hover:bg-white"
                   )}
                 >
-                  <span className="type-body font-semibold">{item.label}</span>
-                  <span className="type-label uppercase tracking-[0.16em] opacity-80">{item.short}</span>
+                  <span className="text-sm font-semibold leading-tight sm:text-base">{item.label}</span>
+                  <span className="mt-0.5 text-[10px] uppercase tracking-[0.16em] opacity-80 sm:text-[11px]">{item.short}</span>
                 </Link>
               </li>
             );

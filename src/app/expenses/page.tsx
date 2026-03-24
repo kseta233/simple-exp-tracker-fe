@@ -101,16 +101,16 @@ export default function ExpensesPage() {
 
   return (
     <AppShell title="Expenses" eyebrow="Main Tracker">
-      <section className="grid grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <SectionCard className="animate-rise">
           <p className="text-sm text-[var(--ink-muted)]">This Month</p>
-          <p className="type-headline mt-2 text-[var(--primary)]">
+          <p className="mt-2 text-4xl font-bold leading-none tracking-[-0.02em] text-[var(--primary)] sm:text-5xl">
             {formatCurrency(monthTotal)}
           </p>
         </SectionCard>
         <SectionCard className="animate-rise [animation-delay:90ms]">
           <p className="type-body text-[var(--ink-muted)]">Total Transactions</p>
-          <p className="type-headline mt-2 text-[var(--ink)]">
+          <p className="mt-2 text-4xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-5xl">
             {state.transactions.length}
           </p>
         </SectionCard>
@@ -133,7 +133,7 @@ export default function ExpensesPage() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             type="button"
-            className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold ${
+            className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold sm:px-5 sm:text-sm ${
               !state.filters.categoryId
                 ? "bg-[var(--primary)] text-white"
                 : "bg-[var(--surface-high)] text-[var(--ink-muted)]"
@@ -148,7 +148,7 @@ export default function ExpensesPage() {
               <button
                 type="button"
                 key={category.id}
-                className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold ${
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold sm:px-5 sm:text-sm ${
                   state.filters.categoryId === category.id
                     ? "bg-[var(--primary)] text-white"
                     : "bg-[var(--surface-high)] text-[var(--ink-muted)]"
@@ -162,7 +162,7 @@ export default function ExpensesPage() {
       </SectionCard>
 
       <section className="space-y-5 animate-rise [animation-delay:210ms]">
-        <div className="flex items-center justify-between px-1">
+        <div className="flex flex-col gap-1 px-1 sm:flex-row sm:items-center sm:justify-between">
           <p className="type-label font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
             Recent Activity
           </p>
@@ -202,7 +202,7 @@ export default function ExpensesPage() {
                 return (
                   <article
                     key={transaction.id}
-                    className="flex items-center justify-between gap-4 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4"
+                    className="flex flex-col gap-4 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4"
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -211,11 +211,11 @@ export default function ExpensesPage() {
                       >
                         {ICON_BY_CATEGORY[categoryId] ?? "?"}
                       </div>
-                      <div>
-                        <h3 className="text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-3xl leading-tight tracking-[-0.01em] text-[var(--ink)] sm:text-4xl">
                           {transaction.title}
                         </h3>
-                        <div className="mt-2 flex items-center gap-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span className="tag-chip">{categoryLabel}</span>
                           {transaction.attachmentUri ? (
                             <span className="type-label uppercase tracking-[0.15em] text-[var(--ink-muted)]">File</span>
@@ -223,13 +223,14 @@ export default function ExpensesPage() {
                         </div>
                       </div>
                     </div>
-                      <div className="min-w-44 text-right">
-                        <p className="type-title text-[var(--ink)]">
+                    <div className="border-t border-[var(--line)] pt-3 sm:border-none sm:pt-0">
+                      <div className="flex flex-col gap-2 sm:items-end">
+                        <p className="text-5xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-4xl">
                         {formatCurrency(transaction.amount)}
                       </p>
-                        <p className="type-body mt-2 text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
+                        <p className="text-sm text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
                         <select
-                          className="select mt-3 text-sm"
+                          className="select w-full text-sm sm:w-52"
                           value={categoryId}
                           disabled={updatingTransactionId === transaction.id}
                           onChange={async (event) => {
@@ -260,6 +261,7 @@ export default function ExpensesPage() {
                             </option>
                           ))}
                         </select>
+                      </div>
                     </div>
                   </article>
                 );
@@ -271,7 +273,7 @@ export default function ExpensesPage() {
 
       <Link
         href="/chat-add"
-        className="fixed bottom-28 right-6 z-20 flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary)] text-4xl text-white shadow-[var(--shadow-float)]"
+        className="fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--primary)] text-3xl text-white shadow-[var(--shadow-float)] sm:bottom-28 sm:right-6 sm:h-16 sm:w-16 sm:rounded-3xl sm:text-4xl"
         aria-label="Add expense"
       >
         +

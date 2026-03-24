@@ -110,14 +110,14 @@ export default function ChatAddPage() {
         <div className="flex border-b border-[var(--line)]">
           <button
             type="button"
-            className={`flex-1 pb-3 text-center text-base font-semibold ${tab === "quick" ? "tab-active" : "text-[var(--ink-muted)]"}`}
+            className={`flex-1 pb-3 text-center text-sm font-semibold sm:text-base ${tab === "quick" ? "tab-active" : "text-[var(--ink-muted)]"}`}
             onClick={() => setTab("quick")}
           >
             Quick Add (AI)
           </button>
           <button
             type="button"
-            className={`flex-1 pb-3 text-center text-base font-semibold ${tab === "manual" ? "tab-active" : "text-[var(--ink-muted)]"}`}
+            className={`flex-1 pb-3 text-center text-sm font-semibold sm:text-base ${tab === "manual" ? "tab-active" : "text-[var(--ink-muted)]"}`}
             onClick={() => setTab("manual")}
           >
             Manual Entry
@@ -126,11 +126,11 @@ export default function ChatAddPage() {
 
         {tab === "quick" ? (
           <div className="space-y-4">
-            <div className="rounded-3xl border-l-4 border-[var(--primary)] bg-[rgba(223,228,255,0.6)] p-5 text-sm leading-7 text-[var(--ink)]">
+            <div className="rounded-3xl border-l-4 border-[var(--primary)] bg-[rgba(223,228,255,0.6)] p-4 text-sm leading-6 text-[var(--ink)] sm:p-5 sm:leading-7">
               Type details like "Coffee 32k at Starbucks" and upload receipt photos when needed. FE calls OCR process endpoint, receives transactions, and renders confirmation cards below.
             </div>
 
-            <div className="space-y-3 rounded-3xl border-2 border-dashed border-[var(--line)] bg-[var(--surface)] p-5">
+            <div className="space-y-3 rounded-3xl border-2 border-dashed border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
               <label className="block">
                 <span className="mb-2 block text-sm uppercase tracking-[0.16em] text-[var(--ink-muted)]">Quick text input</span>
                 <textarea
@@ -161,11 +161,11 @@ export default function ChatAddPage() {
                 </div>
               ) : null}
 
-              <div className="flex flex-wrap gap-3">
-                <button type="button" className="cta-primary" onClick={handleParse} disabled={state.parsing}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <button type="button" className="cta-primary w-full sm:w-auto" onClick={handleParse} disabled={state.parsing}>
                   {state.parsing ? "AI is parsing..." : "Parse to Draft Cards"}
                 </button>
-                <button type="button" className="cta-secondary" onClick={discardAll}>
+                <button type="button" className="cta-secondary w-full sm:w-auto" onClick={discardAll}>
                   Discard
                 </button>
               </div>
@@ -174,7 +174,7 @@ export default function ChatAddPage() {
         ) : (
           <div className="space-y-4">
             <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-5">
-              <h3 className="font-heading text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">Expense Details</h3>
+              <h3 className="font-heading text-4xl leading-none tracking-[-0.01em] text-[var(--ink)] sm:text-3xl">Expense Details</h3>
               <div className="mt-4 grid gap-3">
                 <input
                   className="field"
@@ -188,7 +188,7 @@ export default function ChatAddPage() {
                   value={manualMerchant}
                   onChange={(event) => setManualMerchant(event.target.value)}
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <input
                     className="field"
                     placeholder="Amount"
@@ -215,11 +215,11 @@ export default function ChatAddPage() {
                   ))}
                 </select>
 
-                <div className="flex gap-3 pt-2">
-                  <button type="button" className="cta-secondary flex-1" onClick={discardAll}>
+                <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+                  <button type="button" className="cta-secondary w-full" onClick={discardAll}>
                     Add Another
                   </button>
-                  <button type="button" className="cta-primary flex-1" onClick={addManualDraft}>
+                  <button type="button" className="cta-primary w-full" onClick={addManualDraft}>
                     Save Entry
                   </button>
                 </div>
@@ -236,9 +236,9 @@ export default function ChatAddPage() {
       </SectionCard>
 
       <SectionCard className="space-y-4">
-        <div className="flex items-end justify-between">
-          <h3 className="font-heading text-3xl leading-none tracking-[-0.02em] text-[var(--ink)]">Confirmation Cards</h3>
-          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
+        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end">
+          <h3 className="font-heading text-6xl leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-5xl">Confirmation Cards</h3>
+          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-base text-[var(--ink-muted)] sm:text-sm">
             {state.draftTransactions.length} drafts
           </span>
         </div>
@@ -252,14 +252,14 @@ export default function ChatAddPage() {
           <div className="space-y-4">
             {state.draftTransactions.map((draft, index) => (
               <article key={draft.id} className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-muted)]">Draft {index + 1}</p>
-                    <h4 className="mt-1 text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">
+                    <h4 className="mt-1 truncate text-4xl leading-none tracking-[-0.01em] text-[var(--ink)] sm:text-3xl">
                       {draft.title || draft.merchant || "Untitled"}
                     </h4>
                   </div>
-                  <button type="button" className="cta-danger" onClick={() => actions.removeDraft(draft.id)}>
+                  <button type="button" className="cta-danger w-full sm:w-auto" onClick={() => actions.removeDraft(draft.id)}>
                     Delete
                   </button>
                 </div>
@@ -325,17 +325,19 @@ export default function ChatAddPage() {
         )}
       </SectionCard>
 
-      <section className="floating-bar safe-bottom fixed bottom-20 left-0 right-0 z-20 border-y border-[var(--line)] px-5 py-3">
-        <div className="mx-auto flex w-full max-w-xl gap-3">
+      <div className="h-32 sm:h-28" />
+
+      <section className="floating-bar safe-bottom fixed bottom-[5.5rem] left-0 right-0 z-20 border-y border-[var(--line)] px-4 py-3 sm:bottom-24 sm:px-5">
+        <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-3 sm:flex">
           <button
             type="button"
-            className="cta-primary flex-1"
+            className="cta-primary w-full sm:flex-1"
             onClick={handleSubmit}
             disabled={state.parsing || state.submitting || state.draftTransactions.length === 0 || hasInvalidDrafts}
           >
             {state.submitting ? "Saving..." : "Submit All Transactions"}
           </button>
-          <button type="button" className="cta-secondary px-5" onClick={discardAll}>
+          <button type="button" className="cta-secondary w-full px-5 sm:w-auto" onClick={discardAll}>
             Discard
           </button>
         </div>

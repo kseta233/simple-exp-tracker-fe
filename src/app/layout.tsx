@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
+import { AuthGate } from "@/components/auth-gate";
 import { AppStoreProvider } from "@/providers/app-store";
 import "./globals.css";
 
@@ -28,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${fontSans.variable} ${fontHeading.variable}`}>
-        <AppStoreProvider>{children}</AppStoreProvider>
+        <AuthGate>
+          <AppStoreProvider>{children}</AppStoreProvider>
+        </AuthGate>
       </body>
     </html>
   );

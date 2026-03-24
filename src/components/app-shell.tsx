@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils/cn";
 const navItems = [
   { href: "/expenses", label: "Expenses", short: "List" },
   { href: "/dashboard", label: "Dashboard", short: "Stats" },
-  { href: "/categories", label: "Categories", short: "Tags" }
+  { href: "/categories", label: "Categories", short: "Tags" },
+  { href: "/settings", label: "Settings", short: "Cloud" }
 ] as const;
 
 export function AppShell({
@@ -37,13 +38,9 @@ export function AppShell({
             </button>
             <h1 className="font-heading text-3xl font-semibold text-[var(--ink)] sm:text-2xl">Precision Finance</h1>
           </div>
-          <button
-            type="button"
-            className="h-9 w-9 rounded-md text-[var(--primary)]"
-            aria-label="Settings"
-          >
+          <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-md text-[var(--primary)]" aria-label="Settings">
             <span className="text-lg">⚙</span>
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -64,7 +61,7 @@ export function AppShell({
       </section>
 
       <nav className="safe-bottom floating-bar fixed bottom-0 left-0 right-0 z-30 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
-        <ul className="mx-auto grid w-full max-w-xl grid-cols-3 gap-2 sm:gap-3">
+        <ul className="mx-auto grid w-full max-w-xl grid-cols-4 gap-2 sm:gap-3">
           {navItems.map((item) => {
             const active = pathname === item.href;
 

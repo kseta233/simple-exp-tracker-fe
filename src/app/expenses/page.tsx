@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell, EmptyState, SectionCard } from "@/components/app-shell";
+import {
+  TransactionFormFields,
+  type TransactionFormErrors,
+  type TransactionFormValues
+} from "@/components/transaction-form-fields";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatDisplayDate, getCurrentMonthKey } from "@/lib/utils/date";
 import {
@@ -10,7 +15,10 @@ import {
   resolveCategoryLabel,
   sortTransactions
 } from "@/lib/utils/selectors";
+import { validateDraft } from "@/lib/utils/validators";
 import { useAppStore } from "@/providers/app-store";
+import type { Transaction } from "@/types/app";
+import { UNCATEGORIZED_CATEGORY_ID } from "@/types/app";
 
 const ICON_BY_CATEGORY: Record<string, string> = {
   food: "F",
@@ -50,8 +58,12 @@ function getDayLabel(dateTrx: string) {
 export default function ExpensesPage() {
   const { state, actions } = useAppStore();
   const [search, setSearch] = useState("");
-  const [updatingTransactionId, setUpdatingTransactionId] = useState<string | null>(null);
   const [inlineMessage, setInlineMessage] = useState<string | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editValues, setEditValues] = useState<TransactionFormValues | null>(null);
+  const [editErrors, setEditErrors] = useState<TransactionFormErrors | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isDeletingEdit, setIsDeletingEdit] = useState(false);
 
   const visibleTransactions = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -98,6 +110,107 @@ export default function ExpensesPage() {
 
     return [...map.entries()];
   }, [visibleTransactions]);
+
+  function openEditModal(transaction: Transaction) {
+    setInlineMessage(null);
+    setEditErrors(null);
+    setEditingTransaction(transaction);
+    setEditValues({
+      title: transaction.title,
+      merchant: transaction.merchant,
+      amount: String(transaction.amount),
+      dateTrx: transaction.dateTrx,
+      categoryId: transaction.categoryId ?? UNCATEGORIZED_CATEGORY_ID
+    });
+  }
+
+  function closeEditModal() {
+    if (isSavingEdit || isDeletingEdit) {
+      return;
+    }
+
+    setEditingTransaction(null);
+    setEditValues(null);
+    setEditErrors(null);
+  }
+
+  async function saveEdit() {
+    if (!editingTransaction || !editValues) {
+      return;
+    }
+
+    const parsedAmount = Number(editValues.amount.replace(/[^\d]/g, ""));
+    const category = state.categories.find((item) => item.id === editValues.categoryId);
+    const validated = validateDraft(
+      {
+        id: editingTransaction.id,
+        merchant: editValues.merchant,
+        title: editValues.title,
+        amount: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
+        dateTrx: editValues.dateTrx,
+        categoryId: editValues.categoryId,
+        categoryLabel: category?.name ?? null,
+        attachmentUri: editingTransaction.attachmentUri ?? null,
+        parseConfidence: null,
+        errors: {},
+        isValid: false
+      },
+      state.categories
+    );
+
+    if (!validated.isValid) {
+      setEditErrors(validated.errors);
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setInlineMessage(null);
+
+    const result = await actions.updateTransaction(editingTransaction.id, {
+      title: validated.title,
+      merchant: validated.merchant,
+      amount: validated.amount,
+      dateTrx: validated.dateTrx,
+      categoryId: validated.categoryId ?? UNCATEGORIZED_CATEGORY_ID
+    });
+
+    setIsSavingEdit(false);
+
+    if (!result.ok) {
+      setInlineMessage(result.message ?? "Failed to update transaction.");
+      return;
+    }
+
+    setInlineMessage(`Updated ${validated.title || validated.merchant}.`);
+    closeEditModal();
+  }
+
+  async function deleteEdit() {
+    if (!editingTransaction) {
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this transaction?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeletingEdit(true);
+    setInlineMessage(null);
+
+    const result = await actions.deleteTransaction(editingTransaction.id);
+
+    setIsDeletingEdit(false);
+
+    if (!result.ok) {
+      setInlineMessage(result.message ?? "Failed to delete transaction.");
+      return;
+    }
+
+    setInlineMessage("Transaction deleted.");
+    closeEditModal();
+  }
 
   return (
     <AppShell title="Expenses" eyebrow="Main Tracker">
@@ -201,7 +314,16 @@ export default function ExpensesPage() {
                 return (
                   <article
                     key={transaction.id}
-                    className="flex flex-col gap-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4"
+                    className="flex cursor-pointer flex-col gap-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4"
+                    onClick={() => openEditModal(transaction)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openEditModal(transaction);
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -228,38 +350,10 @@ export default function ExpensesPage() {
                         {formatCurrency(transaction.amount)}
                       </p>
                         <p className="text-sm text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
-                        <select
-                          className="select w-full text-sm sm:w-52"
-                          value={categoryId}
-                          disabled={updatingTransactionId === transaction.id}
-                          onChange={async (event) => {
-                            setInlineMessage(null);
-                            setUpdatingTransactionId(transaction.id);
-                            const result = await actions.updateTransactionCategory(
-                              transaction.id,
-                              event.target.value
-                            );
-
-                            if (!result.ok) {
-                              setInlineMessage(result.message ?? "Failed to update category.");
-                            } else {
-                              const selected = state.categories.find((item) => item.id === event.target.value);
-                              setInlineMessage(
-                                selected
-                                  ? `Updated ${transaction.title} to ${selected.name}.`
-                                  : "Category updated."
-                              );
-                            }
-
-                            setUpdatingTransactionId(null);
-                          }}
-                        >
-                          {state.categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
+                        <p className="rounded-md bg-[var(--surface-low)] px-3 py-2 text-sm text-[var(--ink-muted)]">
+                          {categoryLabel}
+                        </p>
+                        <p className="text-xs text-[var(--ink-muted)]">Tap to edit</p>
                       </div>
                     </div>
                   </article>
@@ -277,6 +371,70 @@ export default function ExpensesPage() {
       >
         +
       </Link>
+
+      {editingTransaction && editValues ? (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/40 p-0 sm:items-center sm:justify-center sm:p-4">
+          <div className="w-full rounded-t-xl bg-white p-4 sm:max-w-lg sm:rounded-xl sm:border sm:border-[var(--line)]">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.08em] text-[var(--ink-muted)]">Edit Transaction</p>
+                <h3 className="text-lg font-semibold text-[var(--ink)]">{editingTransaction.title}</h3>
+              </div>
+              <button type="button" className="cta-secondary" onClick={closeEditModal} disabled={isSavingEdit}>
+                Close
+              </button>
+            </div>
+
+            <TransactionFormFields
+              values={editValues}
+              errors={editErrors ?? undefined}
+              disabled={isSavingEdit}
+              categories={state.categories.map((category) => ({ id: category.id, name: category.name }))}
+              onChange={(field, value) => {
+                setEditErrors(null);
+                setEditValues((prev) => {
+                  if (!prev) {
+                    return prev;
+                  }
+
+                  return {
+                    ...prev,
+                    [field]: value
+                  };
+                });
+              }}
+            />
+
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                className="cta-secondary w-full"
+                onClick={closeEditModal}
+                disabled={isSavingEdit || isDeletingEdit}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="cta-primary w-full"
+                onClick={saveEdit}
+                disabled={isSavingEdit || isDeletingEdit}
+              >
+                {isSavingEdit ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="mt-2 w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+              onClick={deleteEdit}
+              disabled={isSavingEdit || isDeletingEdit}
+            >
+              {isDeletingEdit ? "Deleting..." : "Delete Entry"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }

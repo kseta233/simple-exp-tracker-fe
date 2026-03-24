@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell, EmptyState, SectionCard } from "@/components/app-shell";
+import { TransactionFormFields } from "@/components/transaction-form-fields";
 import { createId } from "@/lib/utils/id";
 import { getTodayDate } from "@/lib/utils/date";
 import { useAppStore } from "@/providers/app-store";
@@ -255,6 +256,7 @@ export default function ChatAddPage() {
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-muted)]">Draft {index + 1}</p>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.1em] text-[var(--ink-muted)]">Expense Form</p>
                     <h4 className="mt-1 truncate text-lg font-semibold text-[var(--ink)]">
                       {draft.title || draft.merchant || "Untitled"}
                     </h4>
@@ -264,49 +266,38 @@ export default function ChatAddPage() {
                   </button>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input
-                    className="field"
-                    value={draft.title}
-                    placeholder="Title"
-                    onChange={(event) => actions.updateDraft(draft.id, { title: event.target.value })}
-                  />
-                  <input
-                    className="field"
-                    value={draft.merchant}
-                    placeholder="Merchant"
-                    onChange={(event) => actions.updateDraft(draft.id, { merchant: event.target.value })}
-                  />
-                  <input
-                    className="field"
-                    inputMode="numeric"
-                    value={draft.amount ?? ""}
-                    placeholder="Amount"
-                    onChange={(event) => {
-                      const value = event.target.value.trim();
+                <TransactionFormFields
+                  values={{
+                    title: draft.title,
+                    merchant: draft.merchant,
+                    amount: draft.amount === null ? "" : String(draft.amount),
+                    dateTrx: draft.dateTrx,
+                    categoryId: draft.categoryId ?? UNCATEGORIZED_CATEGORY_ID
+                  }}
+                  categories={state.categories.map((category) => ({ id: category.id, name: category.name }))}
+                  errors={draft.errors}
+                  onChange={(field, value) => {
+                    if (field === "amount") {
+                      const normalized = value.trim();
                       actions.updateDraft(draft.id, {
-                        amount: value ? Number(value.replace(/[^\d]/g, "")) : null
+                        amount: normalized ? Number(normalized.replace(/[^\d]/g, "")) : null
                       });
-                    }}
-                  />
-                  <input
-                    className="field"
-                    type="date"
-                    value={draft.dateTrx}
-                    onChange={(event) => actions.updateDraft(draft.id, { dateTrx: event.target.value })}
-                  />
-                  <select
-                    className="select md:col-span-2"
-                    value={draft.categoryId ?? ""}
-                    onChange={(event) => actions.updateDraft(draft.id, { categoryId: event.target.value })}
-                  >
-                    {state.categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                      return;
+                    }
+
+                    if (field === "categoryId") {
+                      actions.updateDraft(draft.id, { categoryId: value });
+                      return;
+                    }
+
+                    if (field === "dateTrx") {
+                      actions.updateDraft(draft.id, { dateTrx: value });
+                      return;
+                    }
+
+                    actions.updateDraft(draft.id, { [field]: value });
+                  }}
+                />
 
                 <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-[0.14em] text-[var(--ink-muted)]">
                   <span className={`tag-chip ${draft.isValid ? "!bg-[rgba(0,113,78,0.18)] !text-[var(--success)]" : ""}`}>

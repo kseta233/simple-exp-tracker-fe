@@ -47,6 +47,17 @@ type StoreContextValue = {
       transactionId: string,
       categoryId: string
     ) => Promise<{ ok: boolean; message?: string }>;
+    updateTransaction: (
+      transactionId: string,
+      payload: {
+        title: string;
+        merchant: string;
+        amount: number | null;
+        dateTrx: string;
+        categoryId: string;
+      }
+    ) => Promise<{ ok: boolean; message?: string }>;
+    deleteTransaction: (transactionId: string) => Promise<{ ok: boolean; message?: string }>;
   };
 };
 
@@ -405,6 +416,65 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         categoryLabel: category.name
       });
 
+      await refreshData();
+      return { ok: true };
+    },
+    async updateTransaction(transactionId, payload) {
+      const transaction = stateRef.current.transactions.find((item) => item.id === transactionId);
+
+      if (!transaction) {
+        return { ok: false, message: "Transaction not found." };
+      }
+
+      const category = stateRef.current.categories.find((item) => item.id === payload.categoryId);
+
+      if (!category) {
+        return { ok: false, message: "Category not found." };
+      }
+
+      const validated = validateDraft(
+        {
+          id: transaction.id,
+          merchant: payload.merchant,
+          title: payload.title,
+          amount: payload.amount,
+          dateTrx: payload.dateTrx,
+          categoryId: payload.categoryId,
+          categoryLabel: category.name,
+          attachmentUri: transaction.attachmentUri ?? null,
+          parseConfidence: null,
+          errors: {},
+          isValid: false
+        },
+        stateRef.current.categories
+      );
+
+      if (!validated.isValid) {
+        const firstError = Object.values(validated.errors).find(Boolean) ?? "Invalid transaction data.";
+        return { ok: false, message: firstError };
+      }
+
+      await db.transactions.put({
+        ...transaction,
+        title: validated.title,
+        merchant: validated.merchant,
+        amount: validated.amount ?? transaction.amount,
+        dateTrx: validated.dateTrx,
+        categoryId: validated.categoryId,
+        categoryLabel: validated.categoryLabel ?? transaction.categoryLabel
+      });
+
+      await refreshData();
+      return { ok: true };
+    },
+    async deleteTransaction(transactionId) {
+      const transaction = stateRef.current.transactions.find((item) => item.id === transactionId);
+
+      if (!transaction) {
+        return { ok: false, message: "Transaction not found." };
+      }
+
+      await db.transactions.delete(transactionId);
       await refreshData();
       return { ok: true };
     }

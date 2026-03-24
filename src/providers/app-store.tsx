@@ -43,6 +43,10 @@ type StoreContextValue = {
     createCategory: (name: string) => Promise<{ ok: boolean; message?: string }>;
     renameCategory: (categoryId: string, name: string) => Promise<{ ok: boolean; message?: string }>;
     deleteCategory: (categoryId: string) => Promise<{ ok: boolean; message?: string }>;
+    updateTransactionCategory: (
+      transactionId: string,
+      categoryId: string
+    ) => Promise<{ ok: boolean; message?: string }>;
   };
 };
 
@@ -379,6 +383,28 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         );
         await db.categories.delete(categoryId);
       });
+      await refreshData();
+      return { ok: true };
+    },
+    async updateTransactionCategory(transactionId, categoryId) {
+      const category = stateRef.current.categories.find((item) => item.id === categoryId);
+
+      if (!category) {
+        return { ok: false, message: "Category not found." };
+      }
+
+      const transaction = stateRef.current.transactions.find((item) => item.id === transactionId);
+
+      if (!transaction) {
+        return { ok: false, message: "Transaction not found." };
+      }
+
+      await db.transactions.put({
+        ...transaction,
+        categoryId: category.id,
+        categoryLabel: category.name
+      });
+
       await refreshData();
       return { ok: true };
     }

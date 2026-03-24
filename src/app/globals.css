@@ -19,6 +19,11 @@
   --danger: #ba1a1a;
   --shadow-soft: 0 8px 24px rgba(0, 11, 96, 0.08);
   --shadow-float: 0 16px 30px rgba(0, 11, 96, 0.22);
+  --type-display-lg: 3.5rem;
+  --type-headline-md: 1.75rem;
+  --type-title-lg: 1.375rem;
+  --type-body-md: 0.875rem;
+  --type-label-sm: 0.6875rem;
 }
 
 html {
@@ -34,6 +39,8 @@ body {
     var(--background);
   color: var(--ink);
   font-family: var(--font-sans), sans-serif;
+  font-size: var(--type-body-md);
+  line-height: 1.45;
 }
 
 a {
@@ -58,6 +65,45 @@ textarea {
 
 .font-heading {
   font-family: var(--font-heading), sans-serif;
+}
+
+.type-display {
+  font-family: var(--font-heading), sans-serif;
+  font-size: var(--type-display-lg);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.type-headline {
+  font-family: var(--font-heading), sans-serif;
+  font-size: var(--type-headline-md);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.type-title {
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--type-title-lg);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.type-body {
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--type-body-md);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.type-label {
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--type-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
 }
 
 .panel {

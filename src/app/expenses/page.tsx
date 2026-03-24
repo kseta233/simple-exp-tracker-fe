@@ -50,6 +50,8 @@ function getDayLabel(dateTrx: string) {
 export default function ExpensesPage() {
   const { state, actions } = useAppStore();
   const [search, setSearch] = useState("");
+  const [updatingTransactionId, setUpdatingTransactionId] = useState<string | null>(null);
+  const [inlineMessage, setInlineMessage] = useState<string | null>(null);
 
   const visibleTransactions = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -102,13 +104,13 @@ export default function ExpensesPage() {
       <section className="grid grid-cols-2 gap-4">
         <SectionCard className="animate-rise">
           <p className="text-sm text-[var(--ink-muted)]">This Month</p>
-          <p className="mt-2 text-4xl font-semibold tracking-[-0.03em] text-[var(--primary)]">
+          <p className="type-headline mt-2 text-[var(--primary)]">
             {formatCurrency(monthTotal)}
           </p>
         </SectionCard>
         <SectionCard className="animate-rise [animation-delay:90ms]">
-          <p className="text-sm text-[var(--ink-muted)]">Total Transactions</p>
-          <p className="mt-2 text-4xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+          <p className="type-body text-[var(--ink-muted)]">Total Transactions</p>
+          <p className="type-headline mt-2 text-[var(--ink)]">
             {state.transactions.length}
           </p>
         </SectionCard>
@@ -121,14 +123,17 @@ export default function ExpensesPage() {
             type="search"
             placeholder="Search by title..."
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setInlineMessage(null);
+            }}
           />
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">o</span>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             type="button"
-            className={`shrink-0 rounded-full px-6 py-2 text-base font-semibold ${
+            className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold ${
               !state.filters.categoryId
                 ? "bg-[var(--primary)] text-white"
                 : "bg-[var(--surface-high)] text-[var(--ink-muted)]"
@@ -143,7 +148,7 @@ export default function ExpensesPage() {
               <button
                 type="button"
                 key={category.id}
-                className={`shrink-0 rounded-full px-6 py-2 text-base font-semibold ${
+                className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold ${
                   state.filters.categoryId === category.id
                     ? "bg-[var(--primary)] text-white"
                     : "bg-[var(--surface-high)] text-[var(--ink-muted)]"
@@ -158,11 +163,17 @@ export default function ExpensesPage() {
 
       <section className="space-y-5 animate-rise [animation-delay:210ms]">
         <div className="flex items-center justify-between px-1">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+          <p className="type-label font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
             Recent Activity
           </p>
-          <p className="text-xl leading-none text-[var(--ink-muted)]">{monthLabel}</p>
+          <p className="type-body text-[var(--ink-muted)]">{monthLabel}</p>
         </div>
+
+        {inlineMessage ? (
+          <SectionCard>
+            <p className="type-body text-[var(--primary)]">{inlineMessage}</p>
+          </SectionCard>
+        ) : null}
 
         {state.loading ? (
           <SectionCard>
@@ -207,16 +218,48 @@ export default function ExpensesPage() {
                         <div className="mt-2 flex items-center gap-2">
                           <span className="tag-chip">{categoryLabel}</span>
                           {transaction.attachmentUri ? (
-                            <span className="text-xs uppercase tracking-[0.15em] text-[var(--ink-muted)]">File</span>
+                            <span className="type-label uppercase tracking-[0.15em] text-[var(--ink-muted)]">File</span>
                           ) : null}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-3xl leading-none tracking-[-0.02em] text-[var(--ink)]">
+                      <div className="min-w-44 text-right">
+                        <p className="type-title text-[var(--ink)]">
                         {formatCurrency(transaction.amount)}
                       </p>
-                      <p className="mt-2 text-sm text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
+                        <p className="type-body mt-2 text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
+                        <select
+                          className="select mt-3 text-sm"
+                          value={categoryId}
+                          disabled={updatingTransactionId === transaction.id}
+                          onChange={async (event) => {
+                            setInlineMessage(null);
+                            setUpdatingTransactionId(transaction.id);
+                            const result = await actions.updateTransactionCategory(
+                              transaction.id,
+                              event.target.value
+                            );
+
+                            if (!result.ok) {
+                              setInlineMessage(result.message ?? "Failed to update category.");
+                            } else {
+                              const selected = state.categories.find((item) => item.id === event.target.value);
+                              setInlineMessage(
+                                selected
+                                  ? `Updated ${transaction.title} to ${selected.name}.`
+                                  : "Category updated."
+                              );
+                            }
+
+                            setUpdatingTransactionId(null);
+                          }}
+                        >
+                          {state.categories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
                     </div>
                   </article>
                 );

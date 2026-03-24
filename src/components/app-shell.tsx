@@ -33,16 +33,16 @@ export function AppShell({
               className="h-9 w-9 rounded-full text-[var(--primary)] transition hover:bg-white"
               aria-label="Menu"
             >
-              <span className="text-xl">=</span>
+              <span className="text-xl">≡</span>
             </button>
-            <h1 className="font-heading text-[28px] leading-none tracking-[-0.02em] text-[var(--ink)]">Precision Finance</h1>
+            <h1 className="font-heading text-xl font-bold tracking-[-0.01em] text-[var(--ink)]">Precision Finance</h1>
           </div>
           <button
             type="button"
             className="h-9 w-9 rounded-full text-[var(--primary)] transition hover:bg-white"
             aria-label="Settings"
           >
-            <span className="text-lg">*</span>
+            <span className="text-lg">⚙</span>
           </button>
         </div>
       </header>
@@ -51,9 +51,9 @@ export function AppShell({
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             {eyebrow ? (
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">{eyebrow}</p>
+              <p className="type-label font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">{eyebrow}</p>
             ) : null}
-            <h2 className="mt-2 font-heading text-[42px] leading-[0.95] tracking-[-0.03em] text-[var(--primary)]">
+            <h2 className="type-headline mt-2 text-[var(--primary)]">
               {title}
             </h2>
           </div>
@@ -79,8 +79,8 @@ export function AppShell({
                       : "text-[var(--ink-muted)] hover:bg-white"
                   )}
                 >
-                  <span className="text-sm font-semibold">{item.label}</span>
-                  <span className="text-[10px] uppercase tracking-[0.16em] opacity-80">{item.short}</span>
+                  <span className="type-body font-semibold">{item.label}</span>
+                  <span className="type-label uppercase tracking-[0.16em] opacity-80">{item.short}</span>
                 </Link>
               </li>
             );
@@ -113,10 +113,10 @@ export function EmptyState({
   return (
     <div className="flex min-h-56 flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[var(--line)] bg-[var(--surface)] px-6 py-10 text-center">
       <div className="icon-circle">
-        <span className="text-lg">o</span>
+        <span className="text-lg">•</span>
       </div>
-      <h2 className="mt-4 font-heading text-3xl text-[var(--ink)]">{title}</h2>
-      <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--ink-muted)]">{description}</p>
+      <h2 className="type-headline mt-4 text-[var(--ink)]">{title}</h2>
+      <p className="type-body mt-2 max-w-sm text-[var(--ink-muted)]">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );

@@ -74,7 +74,7 @@ export default function CategoriesPage() {
   return (
     <AppShell title="Categories" eyebrow="Manage Buckets">
       <SectionCard className="space-y-4">
-        <p className="text-sm uppercase tracking-[0.2em] text-[var(--ink-muted)]">Create New</p>
+        <p className="type-label uppercase tracking-[0.2em] text-[var(--ink-muted)]">Create New</p>
         <div className="flex gap-3">
           <input
             className="field"
@@ -96,8 +96,8 @@ export default function CategoriesPage() {
 
       <SectionCard className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-heading text-3xl leading-none tracking-[-0.02em] text-[var(--ink)]">Active Categories</h3>
-          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
+          <h3 className="type-headline text-[var(--ink)]">Active Categories</h3>
+          <span className="type-body rounded-full bg-[var(--surface-high)] px-3 py-1 text-[var(--ink-muted)]">
             {state.categories.length} Total
           </span>
         </div>
@@ -150,8 +150,8 @@ export default function CategoriesPage() {
                       </div>
                     ) : (
                       <div className="min-w-0">
-                        <p className="truncate text-2xl leading-none tracking-[-0.01em] text-[var(--ink)]">{category.name}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                        <p className="type-title truncate text-[var(--ink)]">{category.name}</p>
+                        <p className="type-label mt-1 uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                           {isProtected ? "Locked" : `${usageCount} linked transactions`}
                         </p>
                       </div>

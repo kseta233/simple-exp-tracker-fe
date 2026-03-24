@@ -96,7 +96,7 @@ export default function CategoriesPage() {
 
       <SectionCard className="space-y-4">
         <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-          <h3 className="text-5xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-4xl">Active Categories</h3>
+          <h3 className="text-xl font-semibold text-[var(--ink)]">Active Categories</h3>
           <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
             {state.categories.length} Total
           </span>
@@ -111,7 +111,7 @@ export default function CategoriesPage() {
             return (
               <article
                 key={category.id}
-                className={`rounded-3xl border p-4 ${
+                className={`rounded-xl border p-4 ${
                   isProtected
                     ? "border-dashed border-[var(--line)] bg-[var(--surface-low)] opacity-80"
                     : "border-[var(--line)] bg-[var(--surface)]"
@@ -150,8 +150,8 @@ export default function CategoriesPage() {
                       </div>
                     ) : (
                       <div className="min-w-0">
-                        <p className="truncate text-4xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">{category.name}</p>
-                        <p className="type-label mt-1 uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                        <p className="truncate text-lg font-semibold text-[var(--ink)]">{category.name}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.08em] text-[var(--ink-muted)]">
                           {isProtected ? "Locked" : `${usageCount} linked transactions`}
                         </p>
                       </div>

@@ -104,22 +104,22 @@ export default function ExpensesPage() {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <SectionCard className="animate-rise">
           <p className="text-sm text-[var(--ink-muted)]">This Month</p>
-          <p className="mt-2 text-4xl font-bold leading-none tracking-[-0.02em] text-[var(--primary)] sm:text-5xl">
+          <p className="mt-2 text-2xl font-semibold text-[var(--ink)] sm:text-3xl">
             {formatCurrency(monthTotal)}
           </p>
         </SectionCard>
         <SectionCard className="animate-rise [animation-delay:90ms]">
           <p className="type-body text-[var(--ink-muted)]">Total Transactions</p>
-          <p className="mt-2 text-4xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-5xl">
+          <p className="mt-2 text-2xl font-semibold text-[var(--ink)] sm:text-3xl">
             {state.transactions.length}
           </p>
         </SectionCard>
       </section>
 
       <SectionCard className="space-y-4 animate-rise [animation-delay:140ms]">
-        <div className="relative">
+        <div>
           <input
-            className="field pl-12"
+            className="field"
             type="search"
             placeholder="Search by title..."
             value={search}
@@ -128,7 +128,6 @@ export default function ExpensesPage() {
               setInlineMessage(null);
             }}
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">o</span>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
@@ -202,7 +201,7 @@ export default function ExpensesPage() {
                 return (
                   <article
                     key={transaction.id}
-                    className="flex flex-col gap-4 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4"
+                    className="flex flex-col gap-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4"
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -212,7 +211,7 @@ export default function ExpensesPage() {
                         {ICON_BY_CATEGORY[categoryId] ?? "?"}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-3xl leading-tight tracking-[-0.01em] text-[var(--ink)] sm:text-4xl">
+                        <h3 className="break-all text-xl font-semibold leading-tight text-[var(--ink)] sm:text-2xl">
                           {transaction.title}
                         </h3>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -225,7 +224,7 @@ export default function ExpensesPage() {
                     </div>
                     <div className="border-t border-[var(--line)] pt-3 sm:border-none sm:pt-0">
                       <div className="flex flex-col gap-2 sm:items-end">
-                        <p className="text-5xl font-bold leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-4xl">
+                        <p className="text-3xl font-semibold text-[var(--ink)] sm:text-2xl">
                         {formatCurrency(transaction.amount)}
                       </p>
                         <p className="text-sm text-[var(--ink-muted)]">{formatDisplayDate(transaction.dateTrx)}</p>
@@ -273,7 +272,7 @@ export default function ExpensesPage() {
 
       <Link
         href="/chat-add"
-        className="fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--primary)] text-3xl text-white shadow-[var(--shadow-float)] sm:bottom-28 sm:right-6 sm:h-16 sm:w-16 sm:rounded-3xl sm:text-4xl"
+        className="fixed bottom-24 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] text-2xl text-white sm:bottom-24 sm:right-6"
         aria-label="Add expense"
       >
         +

@@ -174,7 +174,7 @@ export default function ChatAddPage() {
         ) : (
           <div className="space-y-4">
             <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-5">
-              <h3 className="font-heading text-4xl leading-none tracking-[-0.01em] text-[var(--ink)] sm:text-3xl">Expense Details</h3>
+              <h3 className="font-heading text-xl font-semibold text-[var(--ink)]">Expense Details</h3>
               <div className="mt-4 grid gap-3">
                 <input
                   className="field"
@@ -237,8 +237,8 @@ export default function ChatAddPage() {
 
       <SectionCard className="space-y-4">
         <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end">
-          <h3 className="font-heading text-6xl leading-none tracking-[-0.02em] text-[var(--ink)] sm:text-5xl">Confirmation Cards</h3>
-          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-base text-[var(--ink-muted)] sm:text-sm">
+          <h3 className="font-heading text-xl font-semibold text-[var(--ink)]">Confirmation Cards</h3>
+          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
             {state.draftTransactions.length} drafts
           </span>
         </div>
@@ -251,11 +251,11 @@ export default function ChatAddPage() {
         ) : (
           <div className="space-y-4">
             {state.draftTransactions.map((draft, index) => (
-              <article key={draft.id} className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4">
+              <article key={draft.id} className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-muted)]">Draft {index + 1}</p>
-                    <h4 className="mt-1 truncate text-4xl leading-none tracking-[-0.01em] text-[var(--ink)] sm:text-3xl">
+                    <h4 className="mt-1 truncate text-lg font-semibold text-[var(--ink)]">
                       {draft.title || draft.merchant || "Untitled"}
                     </h4>
                   </div>
@@ -325,10 +325,8 @@ export default function ChatAddPage() {
         )}
       </SectionCard>
 
-      <div className="h-32 sm:h-28" />
-
-      <section className="floating-bar safe-bottom fixed bottom-[5.5rem] left-0 right-0 z-20 border-y border-[var(--line)] px-4 py-3 sm:bottom-24 sm:px-5">
-        <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-3 sm:flex">
+      <section className="rounded-xl border border-[var(--line)] bg-white p-4">
+        <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-3 sm:flex sm:max-w-none">
           <button
             type="button"
             className="cta-primary w-full sm:flex-1"

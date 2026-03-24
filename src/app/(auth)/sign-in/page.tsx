@@ -8,7 +8,7 @@ export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<"sign-in" | "register" | "google" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +30,7 @@ export default function SignInPage() {
       return;
     }
 
-    setLoading(true);
+    setLoadingAction("sign-in");
     setError(null);
     setMessage(null);
 
@@ -39,7 +39,7 @@ export default function SignInPage() {
       password
     });
 
-    setLoading(false);
+    setLoadingAction(null);
 
     if (signInError) {
       setError(signInError.message);
@@ -55,7 +55,7 @@ export default function SignInPage() {
       return;
     }
 
-    setLoading(true);
+    setLoadingAction("register");
     setError(null);
     setMessage(null);
 
@@ -64,7 +64,7 @@ export default function SignInPage() {
       password
     });
 
-    setLoading(false);
+    setLoadingAction(null);
 
     if (signUpError) {
       setError(signUpError.message);
@@ -72,6 +72,31 @@ export default function SignInPage() {
     }
 
     setMessage("Account created. Check your email if confirmation is enabled, then sign in.");
+  }
+
+  async function handleGoogleSignIn() {
+    if (!supabase) {
+      setError("Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      return;
+    }
+
+    setLoadingAction("google");
+    setError(null);
+    setMessage(null);
+
+    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/expenses` : undefined;
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo
+      }
+    });
+
+    if (oauthError) {
+      setLoadingAction(null);
+      setError(oauthError.message);
+    }
   }
 
   return (
@@ -115,11 +140,14 @@ export default function SignInPage() {
         ) : null}
 
         <div className="mt-4 grid grid-cols-1 gap-2">
-          <button type="button" className="cta-primary w-full" disabled={loading} onClick={handleSignIn}>
-            {loading ? "Please wait..." : "Sign in"}
+          <button type="button" className="cta-primary w-full" disabled={loadingAction !== null} onClick={handleGoogleSignIn}>
+            {loadingAction === "google" ? "Redirecting to Google..." : "Continue with Google"}
           </button>
-          <button type="button" className="cta-secondary w-full" disabled={loading} onClick={handleRegister}>
-            Register
+          <button type="button" className="cta-primary w-full" disabled={loadingAction !== null} onClick={handleSignIn}>
+            {loadingAction === "sign-in" ? "Please wait..." : "Sign in"}
+          </button>
+          <button type="button" className="cta-secondary w-full" disabled={loadingAction !== null} onClick={handleRegister}>
+            {loadingAction === "register" ? "Please wait..." : "Register"}
           </button>
         </div>
       </section>

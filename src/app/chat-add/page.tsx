@@ -12,6 +12,31 @@ import { UNCATEGORIZED_CATEGORY_ID, type DraftTransaction } from "@/types/app";
 
 type TrackingMode = "manual" | "photo-ocr" | "chat-parsing" | null;
 
+function ChatTopBar({
+  title,
+  onBack
+}: {
+  title: string;
+  onBack: () => void;
+}) {
+  return (
+    <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-5">
+      <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
+        <button
+          type="button"
+          className="flex h-9 min-w-16 items-center justify-start rounded-md px-2 text-sm font-medium text-[var(--primary)]"
+          onClick={onBack}
+          aria-label="Back"
+        >
+          ← Back
+        </button>
+        <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">{title}</h1>
+        <div className="h-9 min-w-16" aria-hidden />
+      </div>
+    </header>
+  );
+}
+
 export default function ChatAddPage() {
   const { state, actions } = useAppStore();
   const router = useRouter();
@@ -27,6 +52,14 @@ export default function ChatAddPage() {
   const [manualAmount, setManualAmount] = useState("");
   const [manualDate, setManualDate] = useState(getTodayDate());
   const [manualCategoryId, setManualCategoryId] = useState(UNCATEGORIZED_CATEGORY_ID);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{
+    title: string;
+    merchant: string;
+    amount: string;
+    dateTrx: string;
+    categoryId: string;
+  } | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,6 +95,117 @@ export default function ChatAddPage() {
     setManualAmount("");
     setManualDate(getTodayDate());
     setManualCategoryId(UNCATEGORIZED_CATEGORY_ID);
+    setEditingDraftId(null);
+    setEditValues(null);
+  }
+
+  function openDraftEdit(draft: DraftTransaction) {
+    setEditingDraftId(draft.id);
+    setEditValues({
+      title: draft.title,
+      merchant: draft.merchant,
+      amount: draft.amount?.toString() || "",
+      dateTrx: draft.dateTrx,
+      categoryId: draft.categoryId || UNCATEGORIZED_CATEGORY_ID
+    });
+  }
+
+  function closeDraftEdit() {
+    setEditingDraftId(null);
+    setEditValues(null);
+  }
+
+  function saveDraftEdit() {
+    if (!editValues || !editingDraftId) return;
+
+    const category = state.categories.find((item) => item.id === editValues.categoryId);
+    const parsedAmount = editValues.amount ? Number(editValues.amount.replace(/[^\d]/g, "")) : null;
+
+    actions.updateDraft(editingDraftId, {
+      title: editValues.title,
+      merchant: editValues.merchant,
+      amount: parsedAmount && Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
+      dateTrx: editValues.dateTrx,
+      categoryId: editValues.categoryId,
+      categoryLabel: category?.name ?? "Uncategorized"
+    });
+
+    closeDraftEdit();
+  }
+
+  function DraftCard({ draft }: { draft: DraftTransaction }) {
+    const isEditing = editingDraftId === draft.id;
+
+    if (isEditing && editValues) {
+      return (
+        <article className="rounded-xl border border-[var(--line)] bg-white p-4">
+          <div className="space-y-4">
+            <TransactionFormFields
+              values={editValues}
+              categories={state.categories}
+              errors={draft.errors}
+              onChange={(field, value) => {
+                setEditValues({
+                  ...editValues,
+                  [field]: value
+                });
+              }}
+            />
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                className="flex-1 cta-secondary"
+                onClick={closeDraftEdit}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="flex-1 cta-primary"
+                onClick={saveDraftEdit}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    return (
+      <article
+        onClick={() => openDraftEdit(draft)}
+        className="rounded-xl border border-[var(--line)] bg-white p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <h4 className="font-semibold text-[var(--ink)]">
+              {draft.title || draft.merchant || "Untitled"}
+            </h4>
+            <p className="text-sm text-[var(--ink-muted)]">Rp {draft.amount?.toLocaleString() || "0"}</p>
+            <div className="flex gap-2 mt-2 flex-wrap text-xs">
+              <span className="text-[var(--ink-muted)]">{draft.categoryLabel}</span>
+              <span className="text-[var(--ink-muted)]">{draft.dateTrx}</span>
+              {draft.parseConfidence && (
+                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                  {draft.parseConfidence}% confidence
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="text-[var(--danger)] text-lg flex-shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              actions.removeDraft(draft.id);
+            }}
+          >
+            ×
+          </button>
+        </div>
+      </article>
+    );
   }
 
   // Manual form submission
@@ -166,20 +310,7 @@ export default function ChatAddPage() {
   if (trackingMode === null) {
     return (
       <div className="flex-1 flex flex-col bg-gradient-to-b from-[var(--background)] to-[var(--surface-high)] overflow-hidden">
-        {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
-          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
-            <h1 className="font-heading text-xl font-semibold text-[var(--ink)] sm:text-lg">Expense Tracker</h1>
-            <button
-              type="button"
-              className="text-2xl text-[var(--ink-muted)]"
-              onClick={() => router.push("/expenses")}
-              aria-label="Back"
-            >
-              ×
-            </button>
-          </div>
-        </header>
+        <ChatTopBar title="Add Expense" onBack={() => router.push("/expenses")} />
 
         {/* Chat-style message area */}
         <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-5 space-y-6">
@@ -234,20 +365,7 @@ export default function ChatAddPage() {
   if (trackingMode === "manual") {
     return (
       <div className="flex-1 flex flex-col bg-[var(--background)]">
-        {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
-          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
-            <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">Manual Entry</h1>
-            <button
-              type="button"
-              className="text-2xl text-[var(--ink-muted)]"
-              onClick={resetMode}
-              aria-label="Back"
-            >
-              ×
-            </button>
-          </div>
-        </header>
+        <ChatTopBar title="Manual Entry" onBack={resetMode} />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
@@ -316,26 +434,7 @@ export default function ChatAddPage() {
                   Drafts ({state.draftTransactions.length})
                 </h3>
                 {state.draftTransactions.map((draft, index) => (
-                  <article
-                    key={draft.id}
-                    className="rounded-xl border border-[var(--line)] bg-white p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <h4 className="font-semibold text-[var(--ink)]">
-                          {draft.title || draft.merchant || "Untitled"}
-                        </h4>
-                        <p className="text-sm text-[var(--ink-muted)]">Rp {draft.amount?.toLocaleString() || "0"}</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="text-[var(--danger)] text-lg"
-                        onClick={() => actions.removeDraft(draft.id)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </article>
+                  <DraftCard key={draft.id} draft={draft} />
                 ))}
               </div>
             )}
@@ -371,20 +470,7 @@ export default function ChatAddPage() {
   if (trackingMode === "photo-ocr") {
     return (
       <div className="flex-1 flex flex-col bg-[var(--background)]">
-        {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
-          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
-            <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">Photo OCR</h1>
-            <button
-              type="button"
-              className="text-2xl text-[var(--ink-muted)]"
-              onClick={resetMode}
-              aria-label="Back"
-            >
-              ×
-            </button>
-          </div>
-        </header>
+        <ChatTopBar title="Photo OCR" onBack={resetMode} />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 pb-32">
@@ -472,26 +558,7 @@ export default function ChatAddPage() {
                   Drafts ({state.draftTransactions.length})
                 </h3>
                 {state.draftTransactions.map((draft, index) => (
-                  <article
-                    key={draft.id}
-                    className="rounded-xl border border-[var(--line)] bg-white p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <h4 className="font-semibold text-[var(--ink)]">
-                          {draft.title || draft.merchant || "Untitled"}
-                        </h4>
-                        <p className="text-sm text-[var(--ink-muted)]">Rp {draft.amount?.toLocaleString() || "0"}</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="text-[var(--danger)] text-lg"
-                        onClick={() => actions.removeDraft(draft.id)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </article>
+                  <DraftCard key={draft.id} draft={draft} />
                 ))}
               </div>
             )}
@@ -527,20 +594,7 @@ export default function ChatAddPage() {
   if (trackingMode === "chat-parsing") {
     return (
       <div className="flex-1 flex flex-col bg-[var(--background)]">
-        {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
-          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
-            <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">Chat Parsing</h1>
-            <button
-              type="button"
-              className="text-2xl text-[var(--ink-muted)]"
-              onClick={resetMode}
-              aria-label="Back"
-            >
-              ×
-            </button>
-          </div>
-        </header>
+        <ChatTopBar title="Chat Parsing" onBack={resetMode} />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 pb-32">
@@ -596,38 +650,7 @@ export default function ChatAddPage() {
                   Parsed Expenses ({state.draftTransactions.length})
                 </h3>
                 {state.draftTransactions.map((draft, index) => (
-                  <article
-                    key={draft.id}
-                    className="rounded-xl border border-[var(--line)] bg-white p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-[var(--ink)]">
-                          {draft.title || draft.merchant || "Untitled"}
-                        </h4>
-                        <div className="flex gap-2 mt-1 flex-wrap">
-                          <p className="text-sm text-[var(--ink-muted)]">
-                            Rp {draft.amount?.toLocaleString() || "0"}
-                          </p>
-                          <p className="text-sm text-[var(--ink-muted)]">
-                            {draft.categoryLabel}
-                          </p>
-                          {draft.parseConfidence && (
-                            <p className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                              {draft.parseConfidence}% confidence
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="text-[var(--danger)] text-lg"
-                        onClick={() => actions.removeDraft(draft.id)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </article>
+                  <DraftCard key={draft.id} draft={draft} />
                 ))}
               </div>
             )}

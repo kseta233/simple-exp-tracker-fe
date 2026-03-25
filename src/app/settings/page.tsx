@@ -1,70 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell, SectionCard } from "@/components/app-shell";
-import {
-  type DuplicateConflictStrategy,
-  downloadSnapshotFromCloudAndMerge,
-  signOutFromSupabase,
-  syncSnapshotToCloud
-} from "@/lib/supabase/cloud-sync";
-import { useAppStore } from "@/providers/app-store";
+import { signOutFromSupabase } from "@/lib/supabase/cloud-sync";
+import { supabase } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
-  const { actions } = useAppStore();
   const router = useRouter();
-  const [message, setMessage] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("Signed-in user");
   const [error, setError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"sync" | "download" | "signout" | null>(null);
-  const [conflictStrategy, setConflictStrategy] = useState<DuplicateConflictStrategy>("keep-local");
+  const [signingOut, setSigningOut] = useState(false);
 
-  async function runSync() {
-    setLoadingAction("sync");
-    setMessage(null);
-    setError(null);
+  useEffect(() => {
+    let mounted = true;
 
-    try {
-      const result = await syncSnapshotToCloud();
-
-      if (!result.ok) {
-        setError(result.message);
+    async function loadUser() {
+      if (!supabase) {
         return;
       }
 
-      setMessage(result.message);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sync.");
-    } finally {
-      setLoadingAction(null);
-    }
-  }
-
-  async function runDownloadAndMerge() {
-    setLoadingAction("download");
-    setMessage(null);
-    setError(null);
-
-    try {
-      const result = await downloadSnapshotFromCloudAndMerge(conflictStrategy);
-
-      if (!result.ok) {
-        setError(result.message);
+      const { data } = await supabase.auth.getUser();
+      if (!mounted) {
         return;
       }
 
-      await actions.refreshData();
-      setMessage(result.message);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download and merge backup.");
-    } finally {
-      setLoadingAction(null);
+      setUserEmail(data.user?.email ?? "Signed-in user");
     }
-  }
+
+    void loadUser();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   async function runSignOut() {
-    setLoadingAction("signout");
-    setMessage(null);
+    setSigningOut(true);
     setError(null);
 
     try {
@@ -79,54 +52,36 @@ export default function SettingsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign out.");
     } finally {
-      setLoadingAction(null);
+      setSigningOut(false);
     }
   }
 
   return (
-    <AppShell title="Settings" eyebrow="Cloud Sync">
+    <AppShell title="Settings" eyebrow="Account">
       <SectionCard className="space-y-3">
-        <h3 className="text-lg font-semibold text-[var(--ink)]">Backup</h3>
-        <p className="text-sm text-[var(--ink-muted)]">
-          Save your local database to cloud backup or download cloud backup and merge into current local data.
-        </p>
-
-        <div className="grid grid-cols-1 gap-2">
-          <button type="button" className="cta-primary w-full" onClick={runSync} disabled={loadingAction !== null}>
-            {loadingAction === "sync" ? "Syncing..." : "Sync to Cloud"}
-          </button>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-[var(--ink-muted)]">Duplicate strategy on download</span>
-            <select
-              className="select"
-              value={conflictStrategy}
-              onChange={(event) => setConflictStrategy(event.target.value as DuplicateConflictStrategy)}
-              disabled={loadingAction !== null}
-            >
-              <option value="keep-local">Keep local (skip cloud duplicates)</option>
-              <option value="prefer-cloud">Prefer cloud (replace local duplicate)</option>
-              <option value="keep-both">Keep both entries</option>
-            </select>
-          </label>
-          <button type="button" className="cta-secondary w-full" onClick={runDownloadAndMerge} disabled={loadingAction !== null}>
-            {loadingAction === "download" ? "Downloading..." : "Download from Cloud"}
-          </button>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-muted)]">User</p>
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
+          <p className="text-sm text-[var(--ink-muted)]">Signed in as</p>
+          <p className="mt-1 text-base font-semibold text-[var(--ink)]">{userEmail}</p>
         </div>
-
-        <div className="border-t border-[var(--line)] pt-3">
-          <button type="button" className="cta-secondary w-full" onClick={runSignOut} disabled={loadingAction !== null}>
-            {loadingAction === "signout" ? "Signing out..." : "Sign Out"}
-          </button>
-        </div>
-
-        {error ? (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-        ) : null}
-
-        {message ? (
-          <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</p>
-        ) : null}
       </SectionCard>
+
+      <SectionCard className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-muted)]">Menu</p>
+        <div className="grid grid-cols-1 gap-2">
+          <Link href="/settings/cloud-sync" className="cta-secondary w-full text-center">
+            Cloud Sync
+          </Link>
+          <Link href="/categories" className="cta-secondary w-full text-center">
+            Category Setting
+          </Link>
+          <button type="button" className="cta-danger w-full" onClick={runSignOut} disabled={signingOut}>
+            {signingOut ? "Signing out..." : "Sign Out"}
+          </button>
+        </div>
+      </SectionCard>
+
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
     </AppShell>
   );
 }

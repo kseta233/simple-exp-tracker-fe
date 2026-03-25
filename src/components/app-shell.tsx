@@ -5,11 +5,48 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/expenses", label: "Expenses", short: "List" },
-  { href: "/dashboard", label: "Dashboard", short: "Stats" },
-  { href: "/categories", label: "Categories", short: "Tags" },
-  { href: "/settings", label: "Settings", short: "Cloud" }
+  { href: "/expenses", label: "Expenses", icon: ExpensesIcon },
+  { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
+  { href: "/chat-add", label: "Add Expense", icon: AddIcon },
+  { href: "/settings", label: "Settings", icon: SettingsIcon }
 ] as const;
+
+function ExpensesIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
+    </svg>
+  );
+}
+
+function DashboardIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M4 12a8 8 0 1 1 16 0" />
+      <path d="M12 12l4-3" />
+      <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function AddIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  );
+}
+
+function SettingsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M10.3 3.9c.6-1.2 2.3-1.2 2.9 0l.5 1.1c.3.6 1 .9 1.6.8l1.3-.2c1.3-.2 2.3 1 2 2.3l-.2 1.3c-.1.6.2 1.3.8 1.6l1.1.5c1.2.6 1.2 2.3 0 2.9l-1.1.5c-.6.3-.9 1-.8 1.6l.2 1.3c.2 1.3-1 2.3-2.3 2l-1.3-.2c-.6-.1-1.3.2-1.6.8l-.5 1.1c-.6 1.2-2.3 1.2-2.9 0l-.5-1.1c-.3-.6-1-.9-1.6-.8l-1.3.2c-1.3.2-2.5-.8-2.3-2l.2-1.3c.1-.6-.2-1.3-.8-1.6l-1.1-.5c-1.2-.6-1.2-2.3 0-2.9l1.1-.5c.6-.3.9-1 .8-1.6l-.2-1.3c-.2-1.3.8-2.5 2-2.3l1.3.2c.6.1 1.3-.2 1.6-.8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
 
 export function AppShell({
   title,
@@ -64,20 +101,23 @@ export function AppShell({
         <ul className="mx-auto grid w-full max-w-xl grid-cols-4 gap-2 sm:gap-3">
           {navItems.map((item) => {
             const active = pathname === item.href;
+            const Icon = item.icon;
 
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  aria-label={item.label}
+                  title={item.label}
                   className={cn(
-                    "flex min-h-14 flex-col items-center justify-center rounded-lg border px-2 text-center sm:min-h-16 sm:px-3",
+                    "flex min-h-14 items-center justify-center rounded-lg border px-2 text-center transition-all sm:min-h-16 sm:px-3",
                     active
-                      ? "border-blue-200 bg-[var(--primary-soft)] text-[var(--primary)]"
-                      : "border-transparent text-[var(--ink-muted)]"
+                      ? "-translate-y-0.5 border-blue-200 bg-[var(--primary-soft)] text-[var(--primary)] shadow-sm"
+                      : "border-transparent text-[var(--ink-muted)] hover:bg-[var(--surface)]"
                   )}
                 >
-                  <span className="text-sm font-semibold leading-tight sm:text-base">{item.label}</span>
-                  <span className="mt-0.5 text-[10px] uppercase tracking-[0.16em] opacity-80 sm:text-[11px]">{item.short}</span>
+                  <Icon className="h-6 w-6" />
+                  <span className="sr-only">{item.label}</span>
                 </Link>
               </li>
             );

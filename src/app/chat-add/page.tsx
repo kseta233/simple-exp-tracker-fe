@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { parseChatInput, parseChatMessage } from "@/lib/utils/chat-parser";
+import { parseChatInput } from "@/lib/utils/chat-parser";
 import { TransactionFormFields } from "@/components/transaction-form-fields";
 import { createId } from "@/lib/utils/id";
 import { getTodayDate } from "@/lib/utils/date";
@@ -296,6 +296,17 @@ export default function ChatAddPage() {
   }
 
   async function handleSubmit() {
+    const isValid = actions.validateDrafts();
+    if (!isValid) {
+      return;
+    }
+
+    const conflicts = actions.getSimilarityConflicts();
+    if (conflicts.length > 0) {
+      router.push("/chat-add/similarity");
+      return;
+    }
+
     const ok = await actions.submitDrafts();
     if (!ok) return;
     router.push("/expenses");
@@ -472,6 +483,16 @@ export default function ChatAddPage() {
       <div className="flex-1 flex flex-col bg-[var(--background)]">
         <ChatTopBar title="Photo OCR" onBack={resetMode} />
 
+        {state.parsing ? (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--line)] bg-white px-6 py-5 text-center shadow-lg">
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[var(--surface-high)] border-t-[var(--primary)]" />
+              <p className="mt-4 text-sm font-medium text-[var(--ink)]">Processing OCR...</p>
+              <p className="mt-1 text-xs text-[var(--ink-muted)]">Please wait while we read your document.</p>
+            </div>
+          </div>
+        ) : null}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 pb-32">
           <div className="mx-auto max-w-lg space-y-4">
@@ -532,14 +553,7 @@ export default function ChatAddPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  className="cta-secondary w-full"
-                  onClick={resetMode}
-                >
-                  Back
-                </button>
+              <div className="pt-2">
                 <button
                   type="button"
                   className="cta-primary w-full"

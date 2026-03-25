@@ -12,6 +12,7 @@ import {
 } from "react";
 import { db } from "@/lib/dexie/db";
 import { parseExpenseInput } from "@/lib/api/parse";
+import { findSimilarityConflicts, type SimilarityConflict } from "@/lib/utils/similarity";
 import { createId } from "@/lib/utils/id";
 import { getCurrentMonthKey } from "@/lib/utils/date";
 import { validateCategoryName, validateDraft } from "@/lib/utils/validators";
@@ -39,7 +40,9 @@ type StoreContextValue = {
     removeDraft: (draftId: string) => void;
     discardDrafts: () => void;
     parseDrafts: (request: ParseRequest) => Promise<void>;
-    submitDrafts: () => Promise<boolean>;
+    validateDrafts: (draftIds?: string[]) => boolean;
+    getSimilarityConflicts: (draftIds?: string[]) => SimilarityConflict[];
+    submitDrafts: (draftIds?: string[]) => Promise<boolean>;
     createCategory: (name: string) => Promise<{ ok: boolean; message?: string }>;
     renameCategory: (categoryId: string, name: string) => Promise<{ ok: boolean; message?: string }>;
     deleteCategory: (categoryId: string) => Promise<{ ok: boolean; message?: string }>;
@@ -181,6 +184,15 @@ function normalizeDrafts(drafts: DraftTransaction[], categories: Category[]) {
   return drafts.map((draft) => validateDraft(draft, categories));
 }
 
+function selectDraftsByIds(drafts: DraftTransaction[], draftIds?: string[]) {
+  if (!draftIds || draftIds.length === 0) {
+    return drafts;
+  }
+
+  const draftIdSet = new Set(draftIds);
+  return drafts.filter((draft) => draftIdSet.has(draft.id));
+}
+
 function buildTransactionFromDraft(draft: DraftTransaction, categories: Category[]): Transaction {
   const fallbackCategory = categories.find((category) => category.id === UNCATEGORIZED_CATEGORY_ID);
   const category = categories.find((item) => item.id === draft.categoryId) ?? fallbackCategory;
@@ -277,12 +289,32 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: "set-parsing", payload: false });
       }
     },
-    async submitDrafts() {
+    validateDrafts(draftIds) {
       const validated = normalizeDrafts(stateRef.current.draftTransactions, stateRef.current.categories);
       dispatch({ type: "set-drafts", payload: validated });
 
-      if (validated.some((draft) => !draft.isValid)) {
-        dispatch({ type: "set-error", payload: `${validated.filter((draft) => !draft.isValid).length} invalid cards need fixing.` });
+      const selectedDrafts = selectDraftsByIds(validated, draftIds);
+
+      if (selectedDrafts.some((draft) => !draft.isValid)) {
+        dispatch({ type: "set-error", payload: `${selectedDrafts.filter((draft) => !draft.isValid).length} invalid cards need fixing.` });
+        return false;
+      }
+
+      dispatch({ type: "set-error", payload: null });
+      return true;
+    },
+    getSimilarityConflicts(draftIds) {
+      const selectedDrafts = selectDraftsByIds(stateRef.current.draftTransactions, draftIds);
+      return findSimilarityConflicts(selectedDrafts, stateRef.current.transactions);
+    },
+    async submitDrafts(draftIds) {
+      const validated = normalizeDrafts(stateRef.current.draftTransactions, stateRef.current.categories);
+      dispatch({ type: "set-drafts", payload: validated });
+
+      const selectedDrafts = selectDraftsByIds(validated, draftIds);
+
+      if (selectedDrafts.some((draft) => !draft.isValid)) {
+        dispatch({ type: "set-error", payload: `${selectedDrafts.filter((draft) => !draft.isValid).length} invalid cards need fixing.` });
         return false;
       }
 
@@ -290,7 +322,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: "set-error", payload: null });
 
       try {
-        const transactions = validated.map((draft) => buildTransactionFromDraft(draft, stateRef.current.categories));
+        const transactions = selectedDrafts.map((draft) => buildTransactionFromDraft(draft, stateRef.current.categories));
         await db.transactions.bulkPut(transactions);
         startTransition(() => {
           dispatch({ type: "set-drafts", payload: [] });

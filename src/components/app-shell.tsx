@@ -5,9 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/expenses", label: "Expenses", icon: ExpensesIcon },
   { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { href: "/chat-add", label: "Add Expense", icon: AddIcon },
+  { href: "/expenses", label: "List Transactions", icon: ExpensesIcon },
   { href: "/settings", label: "Settings", icon: SettingsIcon }
 ] as const;
 
@@ -63,24 +62,6 @@ export function AppShell({
 
   return (
     <main className="min-h-screen bg-[var(--background)] pb-32">
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
-        <div className="mx-auto flex w-full max-w-xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="h-9 w-9 rounded-md text-[var(--primary)]"
-              aria-label="Menu"
-            >
-              <span className="text-xl">≡</span>
-            </button>
-            <h1 className="font-heading text-3xl font-semibold text-[var(--ink)] sm:text-2xl">Precision Finance</h1>
-          </div>
-          <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-md text-[var(--primary)]" aria-label="Settings">
-            <span className="text-lg">⚙</span>
-          </Link>
-        </div>
-      </header>
-
       <section className="mx-auto w-full max-w-xl px-4 pt-5 sm:px-5 sm:pt-6">
         <div className="mb-5 flex flex-col items-start gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
@@ -97,8 +78,16 @@ export function AppShell({
         <section className="space-y-5 sm:space-y-6">{children}</section>
       </section>
 
+      <Link
+        href="/chat-add"
+        aria-label="Add expense"
+        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg transition-transform hover:scale-105 sm:right-6"
+      >
+        <AddIcon className="h-6 w-6" />
+      </Link>
+
       <nav className="safe-bottom floating-bar fixed bottom-0 left-0 right-0 z-30 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
-        <ul className="mx-auto grid w-full max-w-xl grid-cols-4 gap-2 sm:gap-3">
+        <ul className="mx-auto grid w-full max-w-xl grid-cols-3 gap-2 sm:gap-3">
           {navItems.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;

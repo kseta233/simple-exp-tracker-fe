@@ -59,6 +59,7 @@ export type ParseRequest = {
   text?: string;
   attachmentUri?: string | null;
   file?: File | null;
+  sourceType?: "receipt" | "bank-notification";
 };
 
 export type ParseResponse = {

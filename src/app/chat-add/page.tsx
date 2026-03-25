@@ -2,30 +2,39 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { AppShell, EmptyState, SectionCard } from "@/components/app-shell";
+import { useEffect, useRef, useState } from "react";
+import { parseChatInput, parseChatMessage } from "@/lib/utils/chat-parser";
 import { TransactionFormFields } from "@/components/transaction-form-fields";
 import { createId } from "@/lib/utils/id";
 import { getTodayDate } from "@/lib/utils/date";
 import { useAppStore } from "@/providers/app-store";
 import { UNCATEGORIZED_CATEGORY_ID, type DraftTransaction } from "@/types/app";
 
-type InputTab = "quick" | "manual";
+type TrackingMode = "manual" | "photo-ocr" | "chat-parsing" | null;
 
 export default function ChatAddPage() {
   const { state, actions } = useAppStore();
   const router = useRouter();
-  const [tab, setTab] = useState<InputTab>("quick");
-  const [text, setText] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [trackingMode, setTrackingMode] = useState<TrackingMode>(null);
+  const [chatInput, setChatInput] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [attachmentUri, setAttachmentUri] = useState<string | null>(null);
+  const [sourceType, setSourceType] = useState<"receipt" | "bank-notification">("receipt");
   const [localMessage, setLocalMessage] = useState<string | null>(null);
-
   const [manualTitle, setManualTitle] = useState("");
   const [manualMerchant, setManualMerchant] = useState("");
   const [manualAmount, setManualAmount] = useState("");
   const [manualDate, setManualDate] = useState(getTodayDate());
   const [manualCategoryId, setManualCategoryId] = useState(UNCATEGORIZED_CATEGORY_ID);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [trackingMode, state.draftTransactions]);
 
   useEffect(() => {
     return () => {
@@ -39,34 +48,37 @@ export default function ChatAddPage() {
     if (attachmentUri) {
       URL.revokeObjectURL(attachmentUri);
     }
-
     setSelectedFile(nextFile);
     setAttachmentUri(nextFile ? URL.createObjectURL(nextFile) : null);
   }
 
-  async function handleParse() {
-    if (!text.trim() && !selectedFile) {
-      setLocalMessage("Type an expense or upload a receipt first.");
+  function resetMode() {
+    setTrackingMode(null);
+    setChatInput("");
+    replaceAttachment(null);
+    setLocalMessage(null);
+    setManualTitle("");
+    setManualMerchant("");
+    setManualAmount("");
+    setManualDate(getTodayDate());
+    setManualCategoryId(UNCATEGORIZED_CATEGORY_ID);
+  }
+
+  // Manual form submission
+  function addManualDraft() {
+    if (!manualMerchant.trim() && !manualTitle.trim()) {
+      setLocalMessage("Please enter a title or merchant.");
       return;
     }
 
-    setLocalMessage(null);
-    await actions.parseDrafts({
-      text,
-      file: selectedFile,
-      attachmentUri
-    });
-  }
-
-  function addManualDraft() {
     const category = state.categories.find((item) => item.id === manualCategoryId);
-    const parsedAmount = Number(manualAmount.replace(/[^\d]/g, ""));
+    const parsedAmount = manualAmount ? Number(manualAmount.replace(/[^\d]/g, "")) : null;
 
     const draft: DraftTransaction = {
       id: createId("draft"),
       merchant: manualMerchant.trim(),
       title: manualTitle.trim(),
-      amount: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
+      amount: parsedAmount && Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
       dateTrx: manualDate,
       categoryId: category?.id ?? UNCATEGORIZED_CATEGORY_ID,
       categoryLabel: category?.name ?? "Uncategorized",
@@ -82,68 +94,328 @@ export default function ChatAddPage() {
     setManualAmount("");
     setManualDate(getTodayDate());
     setManualCategoryId(UNCATEGORIZED_CATEGORY_ID);
+    setLocalMessage(null);
+  }
+
+  // Photo OCR submission
+  async function handleUploadPhoto() {
+    if (!selectedFile) {
+      setLocalMessage("Please select a photo first.");
+      return;
+    }
+
+    setLocalMessage(null);
+    await actions.parseDrafts({
+      file: selectedFile,
+      attachmentUri,
+      sourceType
+    });
+  }
+
+  // Chat parsing submission
+  function handleChatParsing() {
+    if (!chatInput.trim()) {
+      setLocalMessage("Type a message first.");
+      return;
+    }
+
+    const messages = parseChatInput(chatInput);
+    
+    if (messages.length === 0) {
+      setLocalMessage("Unable to parse. Try: 'Coffee 50k' or 'Lunch 75000 at Warung'");
+      return;
+    }
+
+    const newDrafts: DraftTransaction[] = messages.map((msg) => {
+      const category = state.categories.find(
+        (c) => c.name.toLowerCase() === (msg.category?.toLowerCase() ?? "")
+      ) || state.categories.find((c) => c.id === UNCATEGORIZED_CATEGORY_ID);
+
+      return {
+        id: createId("draft"),
+        merchant: msg.merchant ?? "Unknown",
+        title: msg.title ?? msg.merchant ?? "Expense",
+        amount: msg.amount ?? null,
+        dateTrx: getTodayDate(),
+        categoryId: category?.id ?? UNCATEGORIZED_CATEGORY_ID,
+        categoryLabel: category?.name ?? "Uncategorized",
+        attachmentUri: null,
+        parseConfidence: Math.round(msg.confidence * 100),
+        errors: {},
+        isValid: false
+      };
+    });
+
+    actions.setDraftTransactions([...state.draftTransactions, ...newDrafts]);
+    setChatInput("");
+    setLocalMessage(null);
   }
 
   async function handleSubmit() {
     const ok = await actions.submitDrafts();
-
-    if (!ok) {
-      return;
-    }
-
-    setText("");
-    replaceAttachment(null);
+    if (!ok) return;
     router.push("/expenses");
   }
 
   function discardAll() {
     actions.discardDrafts();
-    setText("");
-    replaceAttachment(null);
-    setLocalMessage(null);
+    resetMode();
   }
 
-  const hasInvalidDrafts = state.draftTransactions.some((draft) => !draft.isValid);
+  // If no mode selected, show selector
+  if (trackingMode === null) {
+    return (
+      <div className="flex-1 flex flex-col bg-gradient-to-b from-[var(--background)] to-[var(--surface-high)] overflow-hidden">
+        {/* Header */}
+        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
+            <h1 className="font-heading text-xl font-semibold text-[var(--ink)] sm:text-lg">Expense Tracker</h1>
+            <button
+              type="button"
+              className="text-2xl text-[var(--ink-muted)]"
+              onClick={() => router.push("/expenses")}
+              aria-label="Back"
+            >
+              ×
+            </button>
+          </div>
+        </header>
 
-  return (
-    <AppShell title="Add Expense" eyebrow="Drafting">
-      <SectionCard className="space-y-4">
-        <div className="flex border-b border-[var(--line)]">
-          <button
-            type="button"
-            className={`flex-1 pb-3 text-center text-sm font-semibold sm:text-base ${tab === "quick" ? "tab-active" : "text-[var(--ink-muted)]"}`}
-            onClick={() => setTab("quick")}
-          >
-            Quick Add (AI)
-          </button>
-          <button
-            type="button"
-            className={`flex-1 pb-3 text-center text-sm font-semibold sm:text-base ${tab === "manual" ? "tab-active" : "text-[var(--ink-muted)]"}`}
-            onClick={() => setTab("manual")}
-          >
-            Manual Entry
-          </button>
-        </div>
-
-        {tab === "quick" ? (
-          <div className="space-y-4">
-            <div className="rounded-3xl border-l-4 border-[var(--primary)] bg-[rgba(223,228,255,0.6)] p-4 text-sm leading-6 text-[var(--ink)] sm:p-5 sm:leading-7">
-              Type details like "Coffee 32k at Starbucks" and upload receipt photos when needed. FE calls OCR process endpoint, receives transactions, and renders confirmation cards below.
+        {/* Chat-style message area */}
+        <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-5 space-y-6">
+          <div className="mx-auto max-w-lg">
+            {/* Assistant message */}
+            <div className="mb-6">
+              <div className="inline-flex rounded-2xl rounded-tl-none bg-[var(--surface)] px-4 py-3 shadow-sm">
+                <p className="text-center text-[var(--ink)]">
+                  How would you like to <br /> <strong>track your expense?</strong>
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-3 rounded-3xl border-2 border-dashed border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
-              <label className="block">
-                <span className="mb-2 block text-sm uppercase tracking-[0.16em] text-[var(--ink-muted)]">Quick text input</span>
-                <textarea
-                  className="textarea"
-                  placeholder="Lunch 45k at Pret\nGrab 34.500"
-                  value={text}
-                  onChange={(event) => setText(event.target.value)}
+            {/* Options */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setTrackingMode("manual")}
+                className="w-full rounded-2xl bg-[#E7F5FF] border-2 border-[#B3E5FC] px-4 py-4 text-left hover:bg-[#B3E5FC] transition-colors"
+              >
+                <div className="text-sm font-semibold text-[#0277BD]">📝 Manual Form</div>
+                <div className="mt-1 text-xs text-[#0277BD] opacity-80">Fill in details by hand</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTrackingMode("photo-ocr")}
+                className="w-full rounded-2xl bg-[#F3E5F5] border-2 border-[#CE93D8] px-4 py-4 text-left hover:bg-[#CE93D8] transition-colors"
+              >
+                <div className="text-sm font-semibold text-[#7B1FA2]">📸 Photo OCR</div>
+                <div className="mt-1 text-xs text-[#7B1FA2] opacity-80">Scan receipt or bank notification</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTrackingMode("chat-parsing")}
+                className="w-full rounded-2xl bg-[#E8F5E9] border-2 border-[#81C784] px-4 py-4 text-left hover:bg-[#81C784] transition-colors"
+              >
+                <div className="text-sm font-semibold text-[#2E7D32]">💬 Chat Parsing</div>
+                <div className="mt-1 text-xs text-[#2E7D32] opacity-80">Type like you're chatting</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div ref={messagesEndRef} />
+      </div>
+    );
+  }
+
+  // Manual form mode
+  if (trackingMode === "manual") {
+    return (
+      <div className="flex-1 flex flex-col bg-[var(--background)]">
+        {/* Header */}
+        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
+            <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">Manual Entry</h1>
+            <button
+              type="button"
+              className="text-2xl text-[var(--ink-muted)]"
+              onClick={resetMode}
+              aria-label="Back"
+            >
+              ×
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+          <div className="mx-auto max-w-lg space-y-4">
+            {/* Form */}
+            <div className="rounded-2xl border border-[var(--line)] bg-white p-4 sm:p-5 space-y-4">
+              <input
+                className="field"
+                placeholder="Title / Description"
+                value={manualTitle}
+                onChange={(event) => setManualTitle(event.target.value)}
+              />
+              <input
+                className="field"
+                placeholder="Merchant"
+                value={manualMerchant}
+                onChange={(event) => setManualMerchant(event.target.value)}
+              />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input
+                  className="field"
+                  placeholder="Amount"
+                  inputMode="numeric"
+                  value={manualAmount}
+                  onChange={(event) => setManualAmount(event.target.value)}
                 />
-              </label>
+                <input
+                  className="field"
+                  type="date"
+                  value={manualDate}
+                  onChange={(event) => setManualDate(event.target.value)}
+                />
+              </div>
+              <select
+                className="select"
+                value={manualCategoryId}
+                onChange={(event) => setManualCategoryId(event.target.value)}
+              >
+                {state.categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              {localMessage && (
+                <div className="rounded-xl border border-[rgba(186,26,26,0.18)] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
+                  {localMessage}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+                <button type="button" className="cta-secondary w-full" onClick={() => setManualTitle("")}>
+                  Add Another
+                </button>
+                <button type="button" className="cta-primary w-full" onClick={addManualDraft}>
+                  Save Entry
+                </button>
+              </div>
+            </div>
+
+            {/* Drafts list */}
+            {state.draftTransactions.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-[var(--ink-muted)] uppercase tracking-[0.1em]">
+                  Drafts ({state.draftTransactions.length})
+                </h3>
+                {state.draftTransactions.map((draft, index) => (
+                  <article
+                    key={draft.id}
+                    className="rounded-xl border border-[var(--line)] bg-white p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <h4 className="font-semibold text-[var(--ink)]">
+                          {draft.title || draft.merchant || "Untitled"}
+                        </h4>
+                        <p className="text-sm text-[var(--ink-muted)]">Rp {draft.amount?.toLocaleString() || "0"}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[var(--danger)] text-lg"
+                        onClick={() => actions.removeDraft(draft.id)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom action bar */}
+        <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto max-w-2xl grid w-full grid-cols-2 gap-3">
+            <button
+              type="button"
+              className="cta-secondary"
+              onClick={discardAll}
+              disabled={state.draftTransactions.length === 0}
+            >
+              Discard All
+            </button>
+            <button
+              type="button"
+              className="cta-primary"
+              onClick={handleSubmit}
+              disabled={state.submitting || state.draftTransactions.length === 0}
+            >
+              {state.submitting ? "Saving..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Photo OCR mode
+  if (trackingMode === "photo-ocr") {
+    return (
+      <div className="flex-1 flex flex-col bg-[var(--background)]">
+        {/* Header */}
+        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
+            <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">Photo OCR</h1>
+            <button
+              type="button"
+              className="text-2xl text-[var(--ink-muted)]"
+              onClick={resetMode}
+              aria-label="Back"
+            >
+              ×
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 pb-32">
+          <div className="mx-auto max-w-lg space-y-4">
+            {/* Form */}
+            <div className="rounded-2xl border border-[var(--line)] bg-white p-4 sm:p-5 space-y-4">
+              <div>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[var(--ink-muted)]">
+                    Source Type
+                  </span>
+                  <select
+                    className="select w-full"
+                    value={sourceType}
+                    onChange={(event) => setSourceType(event.target.value as "receipt" | "bank-notification")}
+                  >
+                    <option value="receipt">Receipt (Expense Parser)</option>
+                    <option value="bank-notification">Bank Notification (Document Reader)</option>
+                  </select>
+                  <p className="mt-2 text-xs text-[var(--ink-muted)]">
+                    {sourceType === "receipt"
+                      ? "Use for receipts and invoices"
+                      : "Use for bank transaction notifications"}
+                  </p>
+                </label>
+              </div>
 
               <label className="block">
-                <span className="mb-2 block text-sm uppercase tracking-[0.16em] text-[var(--ink-muted)]">Upload receipt photo</span>
+                <span className="mb-2 block text-sm font-semibold text-[var(--ink-muted)]">
+                  Upload Photo
+                </span>
                 <input
                   className="field"
                   type="file"
@@ -156,181 +428,234 @@ export default function ChatAddPage() {
                 />
               </label>
 
-              {attachmentUri && selectedFile?.type.startsWith("image/") ? (
+              {attachmentUri && selectedFile?.type.startsWith("image/") && (
                 <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[var(--line)]">
-                  <Image src={attachmentUri} alt="Receipt preview" fill className="object-cover" unoptimized />
+                  <Image
+                    src={attachmentUri}
+                    alt="Receipt preview"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 </div>
-              ) : null}
+              )}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <button type="button" className="cta-primary w-full sm:w-auto" onClick={handleParse} disabled={state.parsing}>
-                  {state.parsing ? "AI is parsing..." : "Parse to Draft Cards"}
-                </button>
-                <button type="button" className="cta-secondary w-full sm:w-auto" onClick={discardAll}>
-                  Discard
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-5">
-              <h3 className="font-heading text-xl font-semibold text-[var(--ink)]">Expense Details</h3>
-              <div className="mt-4 grid gap-3">
-                <input
-                  className="field"
-                  placeholder="Title / Description"
-                  value={manualTitle}
-                  onChange={(event) => setManualTitle(event.target.value)}
-                />
-                <input
-                  className="field"
-                  placeholder="Merchant"
-                  value={manualMerchant}
-                  onChange={(event) => setManualMerchant(event.target.value)}
-                />
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <input
-                    className="field"
-                    placeholder="Amount"
-                    inputMode="numeric"
-                    value={manualAmount}
-                    onChange={(event) => setManualAmount(event.target.value)}
-                  />
-                  <input
-                    className="field"
-                    type="date"
-                    value={manualDate}
-                    onChange={(event) => setManualDate(event.target.value)}
-                  />
+              {localMessage && (
+                <div className="rounded-xl border border-[rgba(186,26,26,0.18)] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
+                  {localMessage}
                 </div>
-                <select
-                  className="select"
-                  value={manualCategoryId}
-                  onChange={(event) => setManualCategoryId(event.target.value)}
+              )}
+
+              <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  className="cta-secondary w-full"
+                  onClick={resetMode}
                 >
-                  {state.categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
-                  <button type="button" className="cta-secondary w-full" onClick={discardAll}>
-                    Add Another
-                  </button>
-                  <button type="button" className="cta-primary w-full" onClick={addManualDraft}>
-                    Save Entry
-                  </button>
-                </div>
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="cta-primary w-full"
+                  onClick={handleUploadPhoto}
+                  disabled={!selectedFile || state.parsing}
+                >
+                  {state.parsing ? "Processing..." : "Process Photo"}
+                </button>
               </div>
             </div>
-          </div>
-        )}
 
-        {(localMessage || state.errorMessage) ? (
-          <div className="rounded-xl border border-[rgba(186,26,26,0.18)] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
-            {localMessage ?? state.errorMessage}
+            {/* Drafts list */}
+            {state.draftTransactions.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-[var(--ink-muted)] uppercase tracking-[0.1em]">
+                  Drafts ({state.draftTransactions.length})
+                </h3>
+                {state.draftTransactions.map((draft, index) => (
+                  <article
+                    key={draft.id}
+                    className="rounded-xl border border-[var(--line)] bg-white p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <h4 className="font-semibold text-[var(--ink)]">
+                          {draft.title || draft.merchant || "Untitled"}
+                        </h4>
+                        <p className="text-sm text-[var(--ink-muted)]">Rp {draft.amount?.toLocaleString() || "0"}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[var(--danger)] text-lg"
+                        onClick={() => actions.removeDraft(draft.id)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
-        ) : null}
-      </SectionCard>
-
-      <SectionCard className="space-y-4">
-        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end">
-          <h3 className="font-heading text-xl font-semibold text-[var(--ink)]">Confirmation Cards</h3>
-          <span className="rounded-full bg-[var(--surface-high)] px-3 py-1 text-sm text-[var(--ink-muted)]">
-            {state.draftTransactions.length} drafts
-          </span>
         </div>
 
-        {state.draftTransactions.length === 0 ? (
-          <EmptyState
-            title="No drafts yet"
-            description="Parse from OCR or add manual entries. Every draft must be confirmed before submit."
-          />
-        ) : (
-          <div className="space-y-4">
-            {state.draftTransactions.map((draft, index) => (
-              <article key={draft.id} className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--ink-muted)]">Draft {index + 1}</p>
-                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.1em] text-[var(--ink-muted)]">Expense Form</p>
-                    <h4 className="mt-1 truncate text-lg font-semibold text-[var(--ink)]">
-                      {draft.title || draft.merchant || "Untitled"}
-                    </h4>
-                  </div>
-                  <button type="button" className="cta-danger w-full sm:w-auto" onClick={() => actions.removeDraft(draft.id)}>
-                    Delete
-                  </button>
-                </div>
+        {/* Bottom action bar */}
+        <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto max-w-2xl grid w-full grid-cols-2 gap-3">
+            <button
+              type="button"
+              className="cta-secondary"
+              onClick={discardAll}
+              disabled={state.draftTransactions.length === 0}
+            >
+              Discard All
+            </button>
+            <button
+              type="button"
+              className="cta-primary"
+              onClick={handleSubmit}
+              disabled={state.submitting || state.draftTransactions.length === 0}
+            >
+              {state.submitting ? "Saving..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-                <TransactionFormFields
-                  values={{
-                    title: draft.title,
-                    merchant: draft.merchant,
-                    amount: draft.amount === null ? "" : String(draft.amount),
-                    dateTrx: draft.dateTrx,
-                    categoryId: draft.categoryId ?? UNCATEGORIZED_CATEGORY_ID
-                  }}
-                  categories={state.categories.map((category) => ({ id: category.id, name: category.name }))}
-                  errors={draft.errors}
-                  onChange={(field, value) => {
-                    if (field === "amount") {
-                      const normalized = value.trim();
-                      actions.updateDraft(draft.id, {
-                        amount: normalized ? Number(normalized.replace(/[^\d]/g, "")) : null
-                      });
-                      return;
-                    }
+  // Chat parsing mode
+  if (trackingMode === "chat-parsing") {
+    return (
+      <div className="flex-1 flex flex-col bg-[var(--background)]">
+        {/* Header */}
+        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
+            <h1 className="font-heading text-lg font-semibold text-[var(--ink)]">Chat Parsing</h1>
+            <button
+              type="button"
+              className="text-2xl text-[var(--ink-muted)]"
+              onClick={resetMode}
+              aria-label="Back"
+            >
+              ×
+            </button>
+          </div>
+        </header>
 
-                    if (field === "categoryId") {
-                      actions.updateDraft(draft.id, { categoryId: value });
-                      return;
-                    }
-
-                    if (field === "dateTrx") {
-                      actions.updateDraft(draft.id, { dateTrx: value });
-                      return;
-                    }
-
-                    actions.updateDraft(draft.id, { [field]: value });
-                  }}
-                />
-
-                <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-                  <span className={`tag-chip ${draft.isValid ? "!bg-[rgba(0,113,78,0.18)] !text-[var(--success)]" : ""}`}>
-                    {draft.isValid ? "Ready" : "Needs review"}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 pb-32">
+          <div className="mx-auto max-w-lg space-y-4">
+            {/* Input area */}
+            <div className="rounded-2xl border border-[var(--line)] bg-white p-4 sm:p-5 space-y-4">
+              <div>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[var(--ink-muted)]">
+                    Describe your expenses
                   </span>
-                  <span>Confidence {draft.parseConfidence ? `${Math.round(draft.parseConfidence * 100)}%` : "manual"}</span>
+                  <textarea
+                    className="textarea min-h-24"
+                    placeholder="Coffee 50k&#10;Lunch 75000 at Warung&#10;Grab 34.5k"
+                    value={chatInput}
+                    onChange={(event) => setChatInput(event.target.value)}
+                  />
+                  <p className="mt-2 text-xs text-[var(--ink-muted)]">
+                    Type each expense on a new line. Format: "amount merchant category" or "merchant amount"
+                  </p>
+                </label>
+              </div>
+
+              {localMessage && (
+                <div className="rounded-xl border border-[rgba(186,26,26,0.18)] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-[var(--danger)]">
+                  {localMessage}
                 </div>
+              )}
 
-                {draft.errors.amount ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.amount}</p> : null}
-                {draft.errors.dateTrx ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.dateTrx}</p> : null}
-                {draft.errors.title ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.title}</p> : null}
-                {draft.errors.category ? <p className="mt-2 text-sm text-[var(--danger)]">{draft.errors.category}</p> : null}
-              </article>
-            ))}
+              <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  className="cta-secondary w-full"
+                  onClick={resetMode}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="cta-primary w-full"
+                  onClick={handleChatParsing}
+                  disabled={!chatInput.trim()}
+                >
+                  Parse
+                </button>
+              </div>
+            </div>
+
+            {/* Drafts list */}
+            {state.draftTransactions.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-[var(--ink-muted)] uppercase tracking-[0.1em]">
+                  Parsed Expenses ({state.draftTransactions.length})
+                </h3>
+                {state.draftTransactions.map((draft, index) => (
+                  <article
+                    key={draft.id}
+                    className="rounded-xl border border-[var(--line)] bg-white p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-[var(--ink)]">
+                          {draft.title || draft.merchant || "Untitled"}
+                        </h4>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          <p className="text-sm text-[var(--ink-muted)]">
+                            Rp {draft.amount?.toLocaleString() || "0"}
+                          </p>
+                          <p className="text-sm text-[var(--ink-muted)]">
+                            {draft.categoryLabel}
+                          </p>
+                          {draft.parseConfidence && (
+                            <p className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                              {draft.parseConfidence}% confidence
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[var(--danger)] text-lg"
+                        onClick={() => actions.removeDraft(draft.id)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </SectionCard>
-
-      <section className="rounded-xl border border-[var(--line)] bg-white p-4">
-        <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-3 sm:flex sm:max-w-none">
-          <button
-            type="button"
-            className="cta-primary w-full sm:flex-1"
-            onClick={handleSubmit}
-            disabled={state.parsing || state.submitting || state.draftTransactions.length === 0 || hasInvalidDrafts}
-          >
-            {state.submitting ? "Saving..." : "Submit All Transactions"}
-          </button>
-          <button type="button" className="cta-secondary w-full px-5 sm:w-auto" onClick={discardAll}>
-            Discard
-          </button>
         </div>
-      </section>
-    </AppShell>
-  );
+
+        {/* Bottom action bar */}
+        <div className="sticky bottom-0 left-0 right-0 border-t border-[var(--line)] bg-white px-4 py-3 sm:px-5">
+          <div className="mx-auto max-w-2xl grid w-full grid-cols-2 gap-3">
+            <button
+              type="button"
+              className="cta-secondary"
+              onClick={discardAll}
+              disabled={state.draftTransactions.length === 0}
+            >
+              Discard All
+            </button>
+            <button
+              type="button"
+              className="cta-primary"
+              onClick={handleSubmit}
+              disabled={state.submitting || state.draftTransactions.length === 0}
+            >
+              {state.submitting ? "Saving..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }

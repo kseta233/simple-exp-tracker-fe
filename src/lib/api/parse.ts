@@ -143,7 +143,11 @@ function createDraft(params: {
   };
 }
 
-async function parseWithBackend(file: File, text: string): Promise<BackendResponse | null> {
+async function parseWithBackend(
+  file: File,
+  text: string,
+  sourceType?: "receipt" | "bank-notification"
+): Promise<BackendResponse | null> {
   const endpoint = process.env.NEXT_PUBLIC_OCR_API_URL;
 
   if (!endpoint) {
@@ -164,7 +168,12 @@ async function parseWithBackend(file: File, text: string): Promise<BackendRespon
   }
 
   const normalizedEndpoint = endpoint.replace(/\/$/, "");
-  const response = await fetch(`${normalizedEndpoint}/api/v1/ocr/process`, {
+  const url = new URL(`${normalizedEndpoint}/api/v1/ocr/process`);
+  if (sourceType) {
+    url.searchParams.set("sourceType", sourceType);
+  }
+
+  const response = await fetch(url.toString(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${bearerToken}`
@@ -199,7 +208,7 @@ export async function parseExpenseInput(
   const source = inferSource(text, Boolean(request.file));
 
   if (request.file) {
-    const backendResult = await parseWithBackend(request.file, text);
+    const backendResult = await parseWithBackend(request.file, text, request.sourceType);
     const responseTransactions = backendResult?.transactions?.length
       ? backendResult.transactions
       : backendResult?.parsed
